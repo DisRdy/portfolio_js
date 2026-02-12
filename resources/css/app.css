@@ -945,7 +945,6 @@ select:focus {
     max-width: 500px;
     max-height: calc(100vh - 2rem);
     overflow-y: auto;
-    box-shadow: var(--shadow-lg), 0 0 60px var(--primary-glow);
     animation: modalSlideIn 0.3s ease;
     scrollbar-width: none;
     /* Firefox */
