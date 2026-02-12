@@ -129,8 +129,45 @@ document.addEventListener('DOMContentLoaded', function () {
     // Close modals on ESC key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
-            [createModal, editModal].forEach(function (m) {
+            document.querySelectorAll('.modal-overlay').forEach(function (m) {
                 if (m && m.style.display === 'flex') m.style.display = 'none';
+            });
+        }
+    });
+
+    // === PROJECT MODALS ===
+    const createProjectModal = document.getElementById('create-project-modal');
+    const editProjectModal = document.getElementById('edit-project-modal');
+    const openCreateProjectBtn = document.getElementById('open-create-project-modal');
+
+    // Open Create Project Modal
+    if (openCreateProjectBtn && createProjectModal) {
+        openCreateProjectBtn.addEventListener('click', function () {
+            createProjectModal.style.display = 'flex';
+        });
+    }
+
+    // Open Edit Project Modal — populate from data attributes
+    document.querySelectorAll('.open-edit-project-modal').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!editProjectModal) return;
+            const form = document.getElementById('edit-project-form');
+            form.action = btn.dataset.updateUrl;
+            document.getElementById('edit-project-title').value = btn.dataset.title || '';
+            document.getElementById('edit-project-description').value = btn.dataset.description || '';
+            document.getElementById('edit-project-category').value = btn.dataset.category || '';
+            document.getElementById('edit-project-current-file').textContent =
+                (btn.dataset.filename || '') + ' (' + (btn.dataset.filesize || '') + ' KB)';
+
+            editProjectModal.style.display = 'flex';
+        });
+    });
+
+    // Close project modals on overlay click
+    [createProjectModal, editProjectModal].forEach(function (m) {
+        if (m) {
+            m.addEventListener('click', function (e) {
+                if (e.target === m) m.style.display = 'none';
             });
         }
     });

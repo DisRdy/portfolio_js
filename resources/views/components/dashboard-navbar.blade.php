@@ -19,8 +19,14 @@
 
             <!-- Dashboard Link (Active State Logic) -->
             <a href="{{ route('dashboard') }}"
-                class="nav-link {{ Request::routeIs('dashboard') && !Request::routeIs('dashboard.blogs*') ? 'active' : '' }}">
+                class="nav-link {{ Request::routeIs('dashboard') && !Request::routeIs('dashboard.blogs*') && !Request::routeIs('dashboard.projects*') ? 'active' : '' }}">
                 <span class="nav-text">Dashboard</span>
+            </a>
+
+            <!-- Manage Projects Link -->
+            <a href="{{ route('dashboard.projects.index') }}"
+                class="nav-link {{ Request::routeIs('dashboard.projects*') ? 'active' : '' }}">
+                <span class="nav-text">Projects</span>
             </a>
 
             <!-- Manage Blogs Link -->

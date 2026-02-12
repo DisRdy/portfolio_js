@@ -17,110 +17,109 @@
     <div class="dashboard-wrapper">
         <div class="container">
             <div class="dashboard-header">
-                <div class="dashboard-header-top">
-                    <div class="dashboard-title">
-                        <h1>Dashboard</h1>
+                <div class="dashboard-title">
+                    <h1>Dashboard</h1>
+                </div>
+                <hr class="divider">
+            </div>
 
+            {{-- Summary Cards --}}
+            <div class="summary-grid">
+                <a href="{{ route('dashboard.projects.index') }}" class="summary-card">
+                    <div class="summary-icon">📁</div>
+                    <div class="summary-info">
+                        <span class="summary-count">{{ $projectCount }}</span>
+                        <span class="summary-label">Projects</span>
+                    </div>
+                </a>
+
+                <a href="{{ route('dashboard.blogs.index') }}" class="summary-card">
+                    <div class="summary-icon">📝</div>
+                    <div class="summary-info">
+                        <span class="summary-count">{{ $blogCount }}</span>
+                        <span class="summary-label">Blog Posts</span>
+                    </div>
+                </a>
+
+                <div class="summary-card">
+                    <div class="summary-icon">✅</div>
+                    <div class="summary-info">
+                        <span class="summary-count">{{ $publishedBlogCount }}</span>
+                        <span class="summary-label">Published</span>
                     </div>
                 </div>
 
-                <hr class="divider">
+                <div class="summary-card">
+                    <div class="summary-icon">📄</div>
+                    <div class="summary-info">
+                        <span class="summary-count">{{ $draftBlogCount }}</span>
+                        <span class="summary-label">Drafts</span>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Project Upload Form (Always visible for Create) -->
-                @include('partials.project-upload-form', ['editingProject' => null, 'showAlerts' => !isset($editingProject)])
-
-                <!-- Edit Modal (Visible only when editing) -->
-                @if(isset($editingProject) && $editingProject)
-                    <div class="modal-overlay">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h2>Edit Project</h2>
-                                <a href="{{ route('dashboard') }}" class="modal-close">&times;</a>
+            {{-- Recent Projects --}}
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h3>Recent Projects</h3>
+                    <a href="{{ route('dashboard.projects.index') }}" class="section-link">View All &rarr;</a>
+                </div>
+                @if($recentProjects->isEmpty())
+                    <p class="empty-text">No projects yet.</p>
+                @else
+                    <div class="project-list">
+                        @foreach($recentProjects as $project)
+                            <div class="project-item">
+                                <div class="project-item-info">
+                                    <h5>{{ $project->title }}</h5>
+                                    <p class="file-details">
+                                        {{ $project->category }} &bull;
+                                        {{ $project->original_filename }}
+                                    </p>
+                                </div>
                             </div>
-                            @include('partials.project-upload-form', ['editingProject' => $editingProject, 'showAlerts' => true])
-                        </div>
+                        @endforeach
                     </div>
                 @endif
+            </div>
 
-
-                <div class="project-list-section">
-                    <h3 class="project-list-title">Project Saya</h3>
-
-                    @if($projects->isEmpty())
-                        <p class="no-projects-message">Anda belum memiliki project. Upload project pertama Anda!</p>
-                    @else
-                        @php
-                            $groupedProjects = $projects->groupBy('category');
-                        @endphp
-
-                        @foreach(['design' => 'Design', 'pdf' => 'Dokumentasi', 'tutorial' => 'Tutorial IT', 'certificate' => 'Sertifikat'] as $key => $label)
-                            @if($groupedProjects->has($key))
-                                <div>
-                                    <h4 class="category-section-title">{{ $label }}</h4>
-                                    <div class="project-list">
-                                        @foreach($groupedProjects[$key] as $project)
-                                            <div class="project-item">
-                                                <div class="project-item-info">
-                                                    <h5>{{ $project->title }}</h5>
-                                                    @if($project->description)
-                                                        <p>{{ Str::limit($project->description, 100) }}</p>
-                                                    @endif
-                                                    <p class="file-details">
-                                                        {{ $project->original_filename }}
-                                                        ({{ number_format($project->file_size / 1024, 2) }} KB)
-                                                    </p>
-                                                    <div class="project-item-actions">
-                                                        <a href="{{ route('projects.edit', $project->id) }}" class="btn-edit">
-                                                            Edit
-                                                        </a>
-
-                                                        <form action="{{ route('projects.destroy', $project->id) }}" method="POST"
-                                                            class="delete-form-trigger">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn-delete">
-                                                                Hapus
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-                        @endforeach
-                    @endif
+            {{-- Recent Blogs --}}
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h3>Recent Blogs</h3>
+                    <a href="{{ route('dashboard.blogs.index') }}" class="section-link">View All &rarr;</a>
                 </div>
-
-                <hr class="divider">
+                @if($recentBlogs->isEmpty())
+                    <p class="empty-text">No blog posts yet.</p>
+                @else
+                    <div class="project-list">
+                        @foreach($recentBlogs as $blog)
+                            <div class="project-item">
+                                <div class="project-item-info">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <h5>{{ $blog->title }}</h5>
+                                        <span
+                                            class="badge {{ $blog->status === 'published' ? 'badge-success' : 'badge-warning' }}">
+                                            {{ ucfirst($blog->status) }}
+                                        </span>
+                                    </div>
+                                    <p class="file-details">
+                                        {{ $blog->published_at ? $blog->published_at->format('d M Y') : 'Not published' }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
+
         </div>
     </div>
-
-    <!-- Confirmation Modal -->
-    <div id="confirmation-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Konfirmasi Hapus</h2>
-            </div>
-            <p>Apakah Anda yakin ingin menghapus project ini?</p>
-            <div>
-                <button id="cancel-delete" class="btn-secondary">Batal</button>
-                <form id="delete-form-confirm" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn-delete">Ya, Hapus</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-
 
     <footer>
         <p>&copy; 2025 Dr</p>
     </footer>
+
 </body>
 
 </html>

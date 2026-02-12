@@ -63,10 +63,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Project Management Routes
-    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
-    Route::get('/projects/{id}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
-    Route::put('/projects/{id}', [ProjectController::class, 'update'])->name('projects.update');
-    Route::delete('/projects/{id}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::get('/dashboard/projects', [\App\Http\Controllers\Dashboard\ProjectController::class, 'index'])->name('dashboard.projects.index');
+    Route::post('/dashboard/projects', [\App\Http\Controllers\Dashboard\ProjectController::class, 'store'])->name('dashboard.projects.store');
+    Route::put('/dashboard/projects/{id}', [\App\Http\Controllers\Dashboard\ProjectController::class, 'update'])->name('dashboard.projects.update');
+    Route::delete('/dashboard/projects/{id}', [\App\Http\Controllers\Dashboard\ProjectController::class, 'destroy'])->name('dashboard.projects.destroy');
 
     Route::post('/logout', function () {
         Auth::logout();
@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
         session()->regenerateToken();
         return redirect('/');
     })->name('logout');
+
     // Blog Management Routes
     Route::resource('/dashboard/blogs', \App\Http\Controllers\Dashboard\BlogController::class, ['as' => 'dashboard']);
 });
