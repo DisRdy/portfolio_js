@@ -869,6 +869,10 @@ select:focus {
     -ms-overflow-style: none;
 }
 
+.modal-content-lg {
+    max-width: 700px;
+}
+
 .modal-content::-webkit-scrollbar {
     display: none;
     /* Chrome, Safari, Edge */

@@ -19,7 +19,7 @@ class BlogController extends Controller
 
     public function create()
     {
-        return view('dashboard.blogs.create');
+        return redirect()->route('dashboard.blogs.index');
     }
 
     public function store(Request $request)
@@ -62,7 +62,7 @@ class BlogController extends Controller
         if ($blog->user_id !== Auth::id()) {
             abort(403);
         }
-        return view('dashboard.blogs.edit', compact('blog'));
+        return redirect()->route('dashboard.blogs.index');
     }
 
     public function update(Request $request, Blog $blog)
