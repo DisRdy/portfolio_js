@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dr</title>
+    <link rel="icon" href="{{ asset('img/LOGODR.png') }}" type="image/png">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 </head>
@@ -12,7 +13,7 @@
 <body>
     <x-public-navbar />
     <header>
-        <p class="brand-ts">Hi, Welcome to my portfolio</p>
+        <p class="brand-ts">Hi, Welcome!</p>
     </header>
 
     <div class="container">

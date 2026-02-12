@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $blog->title }} - Dr</title>
+    <link rel="icon" href="{{ asset('img/LOGODR.png') }}" type="image/png">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -16,13 +17,13 @@
             <header class="blog-header">
                 <h1 class="article-title">{{ $blog->title }}</h1>
                 @if($blog->subtitle)
-                <p class="article-subtitle">{{ $blog->subtitle }}</p>
-                @if($blog->image)
-                    <div class="article-image-container" style="margin-bottom: 2rem;">
-                        <img src="{{ asset('storage/' . $blog->image) }}" alt="{{ $blog->title }}" class="article-image"
-                            style="width: 100%; max-height: 400px; object-fit: cover; border-radius: var(--radius-lg); border: 1px solid var(--glass-border);">
-                    </div>
-                @endif
+                    <p class="article-subtitle">{{ $blog->subtitle }}</p>
+                    @if($blog->image)
+                        <div class="article-image-container" style="margin-bottom: 2rem;">
+                            <img src="{{ asset('storage/' . $blog->image) }}" alt="{{ $blog->title }}" class="article-image"
+                                style="width: 100%; max-height: 400px; object-fit: cover; border-radius: var(--radius-lg); border: 1px solid var(--glass-border);">
+                        </div>
+                    @endif
                 @endif
                 <div class="article-meta">
                     <span>Published on {{ $blog->published_at->format('F d, Y') }}</span>
