@@ -26,7 +26,7 @@
             {{-- Summary Cards --}}
             <div class="summary-grid">
                 <a href="{{ route('dashboard.projects.index') }}" class="summary-card">
-                    <div class="summary-icon">📁</div>
+                    <div class="summary-icon"></div>
                     <div class="summary-info">
                         <span class="summary-count">{{ $projectCount }}</span>
                         <span class="summary-label">Projects</span>
@@ -34,7 +34,7 @@
                 </a>
 
                 <a href="{{ route('dashboard.blogs.index') }}" class="summary-card">
-                    <div class="summary-icon">📝</div>
+                    <div class="summary-icon"></div>
                     <div class="summary-info">
                         <span class="summary-count">{{ $blogCount }}</span>
                         <span class="summary-label">Blog Posts</span>
@@ -42,7 +42,7 @@
                 </a>
 
                 <div class="summary-card">
-                    <div class="summary-icon">✅</div>
+                    <div class="summary-icon"></div>
                     <div class="summary-info">
                         <span class="summary-count">{{ $publishedBlogCount }}</span>
                         <span class="summary-label">Published</span>
@@ -50,7 +50,7 @@
                 </div>
 
                 <div class="summary-card">
-                    <div class="summary-icon">📄</div>
+                    <div class="summary-icon"></div>
                     <div class="summary-info">
                         <span class="summary-count">{{ $draftBlogCount }}</span>
                         <span class="summary-label">Drafts</span>
