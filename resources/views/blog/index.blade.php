@@ -18,7 +18,7 @@
 
     <div class="container">
         <section>
-            <h2>Latest Posts</h2>
+            <h2 style="margin-bottom: 2rem;">Latest Posts</h2>
 
             @if($blogs->isEmpty())
                 <div class="alert alert-info">

@@ -1,8 +1,3 @@
-/* ============================================
-   WEB3 CYBERSECURITY DESIGN SYSTEM
-   Premium Dark Mode | Glassmorphism | Futuristic
-   ============================================ */
-
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ============================================
@@ -390,7 +385,6 @@ header h1 {
 
 /* Base glass effect */
 .skill-item,
-.project-card,
 .comment-item,
 .auth-wrapper {
     background: var(--glass-bg);
@@ -435,15 +429,17 @@ header h1 {
 }
 
 .project-card {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 18px;
-    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.12), 0 1.5px 6px 0 rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(8px);
+    background: none !important;
+    border: none;
+    border-bottom: 1px solid var(--glass-border) !important;
+    border-radius: 0;
+    box-shadow: none;
     overflow: hidden;
-    min-height: 160px;
+    min-height: auto;
     margin-bottom: 2rem;
     position: relative;
     display: block;
+    backdrop-filter: none;
 }
 
 .project-item {
@@ -451,14 +447,11 @@ header h1 {
     align-items: center;
     gap: 1rem;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(30, 41, 59, 0.4) !important;
-    /* Warna lebih terang */
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 16px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: none !important;
+    border: none;
+    border-bottom: 1px solid var(--glass-border) !important;
+    border-radius: 0;
+    box-shadow: none;
     transition: all 0.3s ease;
 }
 
@@ -1434,8 +1427,10 @@ button.nav-link {
    ============================================ */
 .blog-list {
     display: grid;
-    gap: 2rem;
+
 }
+
+
 
 .blog-card .project-body {
     padding: 1.5rem;
@@ -1495,10 +1490,15 @@ button.nav-link {
 }
 
 .blog-header {
-    text-align: center;
+    background: none;
+    text-align: left !important;
     margin-bottom: 3rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid var(--glass-border);
+}
+
+.blog-header::before {
+    background: none;
+    display: none;
 }
 
 .article-title {

@@ -10,7 +10,6 @@
 </head>
 
 <body>
-    <x-navbar />
 
     <div class="container">
         <section class="auth-wrapper">
@@ -42,10 +41,6 @@
             </form>
         </section>
     </div>
-
-    <footer>
-        <p>&copy; 2025 Dr</p>
-    </footer>
 </body>
 
 </html>
