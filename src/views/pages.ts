@@ -286,12 +286,52 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
   );
 }
 
-export function renderRegisterPage(): string {
+export function renderRegisterPage(flash: FlashData, csrfToken: string): string {
+  const errors = flash.errors;
+  const old = flash.old;
   return htmlDocument(
-    "HUUU",
+    "Register",
     `<div class="container">
         <section class="auth-wrapper">
-            <h2>Cari Apa Bang?</h2>
+            <h2>Create Your Account</h2>
+
+            <form method="POST" action="/register">
+                <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
+
+                <div>
+                    <label for="name" class="form-group-label">Full Name</label>
+                    <input type="text" name="name" id="name" value="${escapeAttribute(oldValue(old, "name"))}" required autofocus
+                        class="form-input">
+                    ${renderValidationError(errors, "name", "text-red-500 text-sm")}
+                </div>
+
+                <div>
+                    <label for="email" class="form-group-label">Email Address</label>
+                    <input type="email" name="email" id="email" value="${escapeAttribute(oldValue(old, "email"))}" required 
+                        class="form-input">
+                    ${renderValidationError(errors, "email", "text-red-500 text-sm")}
+                </div>
+
+                <div>
+                    <label for="password" class="form-group-label">Password</label>
+                    <input type="password" name="password" id="password" required class="form-input">
+                    ${renderValidationError(errors, "password", "text-red-500 text-sm")}
+                </div>
+
+                <div>
+                    <label for="password_confirmation" class="form-group-label">Confirm Password</label>
+                    <input type="password" name="password_confirmation" id="password_confirmation" required class="form-input">
+                    ${renderValidationError(errors, "password_confirmation", "text-red-500 text-sm")}
+                </div>
+
+                <button type="submit" class="btn">
+                    Register
+                </button>
+            </form>
+
+            <p class="text-center mt-4">
+                Already have an account? <a href="/login" class="link">Login here</a>
+            </p>
         </section>
     </div>`,
   );

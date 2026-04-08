@@ -98,14 +98,17 @@ function redirect(location: string, status = 302): Response {
 }
 
 function applySecurityHeaders(response: Response): Response {
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "SAMEORIGIN");
-  response.headers.set("X-XSS-Protection", "1; mode=block");
-  response.headers.set(
+  const newResponse = new Response(response.body, response);
+
+  newResponse.headers.set("X-Content-Type-Options", "nosniff");
+  newResponse.headers.set("X-Frame-Options", "SAMEORIGIN");
+  newResponse.headers.set("X-XSS-Protection", "1; mode=block");
+  newResponse.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';",
+    "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';"
   );
-  return response;
+
+  return newResponse;
 }
 
 async function maybeReadFormData(request: Request): Promise<FormData | null> {
@@ -650,7 +653,7 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
     if (guestRedirect) {
       return guestRedirect;
     }
-    return html(renderRegisterPage());
+    return html(renderRegisterPage(flash, session.payload.csrfToken));
   }
 
   if (method === "POST" && path === "/register") {
