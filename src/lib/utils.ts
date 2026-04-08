@@ -181,6 +181,10 @@ export function getCommentRateLimitWindowSeconds(env: Env): number {
   return Number.isFinite(seconds) ? seconds : 3600;
 }
 
+export function isRegistrationEnabled(env: Env): boolean {
+  return (env.REGISTRATION_ENABLED ?? "false").toLowerCase() === "true";
+}
+
 export function randomToken(length = 40): string {
   const bytes = new Uint8Array(Math.ceil(length / 2));
   crypto.getRandomValues(bytes);

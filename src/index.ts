@@ -33,6 +33,7 @@ import {
   getCommentRateLimitWindowSeconds,
   isDebug,
   isEmail,
+  isRegistrationEnabled,
   normalizeMethod,
   slugify,
   sqlNow,
@@ -632,6 +633,9 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
   }
 
   if (method === "GET" && path === "/register") {
+    if (!isRegistrationEnabled(env)) {
+      return notFound();
+    }
     const guestRedirect = requireGuest(user);
     if (guestRedirect) {
       return guestRedirect;
@@ -640,6 +644,9 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
   }
 
   if (method === "POST" && path === "/register") {
+    if (!isRegistrationEnabled(env)) {
+      return notFound();
+    }
     const guestRedirect = requireGuest(user);
     if (guestRedirect) {
       return guestRedirect;

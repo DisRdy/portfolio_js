@@ -4,6 +4,7 @@ export interface Env {
   APP_NAME?: string;
   APP_URL?: string;
   APP_DEBUG?: string;
+  REGISTRATION_ENABLED?: string;
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;
   SESSION_COOKIE_NAME?: string;
