@@ -1,8 +1,6 @@
 import type { Env } from "../types";
 
-const BASE_SCHEMA_SQL = `
-PRAGMA foreign_keys = ON;
-
+const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -129,8 +127,31 @@ let schemaReadyPromise: Promise<void> | null = null;
 
 export function ensureSchema(env: Env): Promise<void> {
   if (!schemaReadyPromise) {
-    schemaReadyPromise = env.DB.exec(BASE_SCHEMA_SQL)
-      .then(() => undefined)
+    schemaReadyPromise = (async () => {
+      // Execute PRAGMA separately to enable foreign keys
+      await env.DB.prepare("PRAGMA foreign_keys = ON").run();
+      
+      // Split schema by semicolon and execute each statement
+      const statements = SCHEMA_SQL
+        .split(';')
+        .map((stmt) => stmt.trim())
+        .filter((stmt) => stmt.length > 0);
+
+      // Use batch for multiple statements
+      const batch = statements.map((stmt) => env.DB.prepare(stmt));
+      
+      try {
+        await env.DB.batch(batch);
+      } catch (error) {
+        // Log but don't fail if tables already exist
+        const errorStr = String(error);
+        if (!errorStr.includes('already exists') && !errorStr.includes('SQLITE_ERROR')) {
+          throw error;
+        }
+      }
+      
+      return undefined;
+    })()
       .catch((error) => {
         schemaReadyPromise = null;
         throw error;
