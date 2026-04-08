@@ -1,0 +1,30 @@
+"$schema" = "./node_modules/wrangler/config-schema.json"
+name = "portfolio"
+main = "src/index.ts"
+compatibility_date = "2026-04-08"
+
+[vars]
+APP_NAME = "Laravel"
+APP_URL = "http://127.0.0.1:8787"
+APP_DEBUG = "true"
+SESSION_COOKIE_NAME = "laravel-session"
+SESSION_TTL_MINUTES = "120"
+COMMENTS_RATE_LIMIT_MAX = "5"
+COMMENTS_RATE_LIMIT_WINDOW_SECONDS = "3600"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "portfolio-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+preview_database_id = "DB"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "portfolio-uploads"
+preview_bucket_name = "portfolio-uploads-preview"

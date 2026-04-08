@@ -16,6 +16,8 @@
 /public/build
 /public/hot
 /public/storage
+/.wrangler
+/.dev.vars
 /storage/*.key
 /storage/pail
 /vendor

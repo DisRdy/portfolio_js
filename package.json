@@ -1,17 +1,19 @@
 {
-    "$schema": "https://www.schemastore.org/package.json",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "vite build",
-        "dev": "vite"
-    },
-    "devDependencies": {
-        "@tailwindcss/vite": "^4.0.0",
-        "axios": "^1.11.0",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^2.0.0",
-        "tailwindcss": "^4.0.0",
-        "vite": "^7.0.7"
-    }
+  "name": "portfolio-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "d1:migrate:local": "wrangler d1 migrations apply DB --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "wrangler": "^4.11.1"
+  }
 }
