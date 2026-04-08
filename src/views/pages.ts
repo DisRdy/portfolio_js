@@ -164,9 +164,9 @@ export function renderHomePage(): string {
             <p>If you're interested in collaborating or just want to say hello, feel free to reach out to me:</p>
             <p>
                 Email: <a href="mailto:disnaraditya@gmail.com">disnaraditya@gmail.com</a><br>
-                GitHub: <a href="https://github.com/DisRdy" target="_blank">My github</a><br>
-                Dev: <a href="https://dev.to/lamp" target="_blank">Dev community</a> <br>
-                Instagram: <a href="https://www.instagram.com/dsnardy?igsh=bDNubXduNmNsYTM1" target="_blank">My
+                GitHub: <a href="https://github.com/DisRdy" target="_blank" rel="noopener noreferrer">My github</a><br>
+                Dev: <a href="https://dev.to/lamp" target="_blank" rel="noopener noreferrer">Dev community</a> <br>
+                Instagram: <a href="https://www.instagram.com/dsnardy?igsh=bDNubXduNmNsYTM1" target="_blank" rel="noopener noreferrer">My
                     Instagram</a>
             </p>
         </section>

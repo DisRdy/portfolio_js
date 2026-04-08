@@ -113,11 +113,11 @@ export async function listComments(env: Env): Promise<Comment[]> {
   return rows.map(mapComment);
 }
 
-export async function createComment(env: Env, data: { name: string; comment: string; userId: number | null }): Promise<void> {
+export async function createComment(env: Env, data: { name: string; comment: string; userId: number | null; ipAddress: string | null }): Promise<void> {
   const now = sqlNow();
   await env.DB.prepare(
     "INSERT INTO comments (name, comment, user_id, ip_address, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-  ).bind(data.name, data.comment, data.userId, null, now, now).run();
+  ).bind(data.name, data.comment, data.userId, data.ipAddress, now, now).run();
 }
 
 export async function getCommentRateLimit(env: Env, key: string, nowUnix: number): Promise<{ attempts: number; expiresAt: number }> {
@@ -142,6 +142,10 @@ export async function hitCommentRateLimit(env: Env, key: string, nowUnix: number
      VALUES (?, ?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value, expiration = excluded.expiration`,
   ).bind(key, String(attempts), expiration).run();
+}
+
+export async function clearRateLimit(env: Env, key: string): Promise<void> {
+  await env.DB.prepare("DELETE FROM cache WHERE key = ?").bind(key).run();
 }
 
 export async function listProjectsForPublic(env: Env, category?: string): Promise<Project[]> {

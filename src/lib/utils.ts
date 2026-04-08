@@ -154,12 +154,12 @@ export function normalizeMethod(requestMethod: string, formData: FormData | null
 }
 
 export function getRequestIp(request: Request): string {
-  const forwarded = request.headers.get("CF-Connecting-IP") ?? request.headers.get("X-Forwarded-For");
-  if (!forwarded) {
+  const connectingIp = request.headers.get("CF-Connecting-IP");
+  if (!connectingIp) {
     return "127.0.0.1";
   }
 
-  return forwarded.split(",")[0]?.trim() || "127.0.0.1";
+  return connectingIp.trim() || "127.0.0.1";
 }
 
 export function getSessionCookieName(env: Env): string {
@@ -179,6 +179,16 @@ export function getCommentRateLimitMax(env: Env): number {
 export function getCommentRateLimitWindowSeconds(env: Env): number {
   const seconds = Number.parseInt(env.COMMENTS_RATE_LIMIT_WINDOW_SECONDS ?? "3600", 10);
   return Number.isFinite(seconds) ? seconds : 3600;
+}
+
+export function getLoginRateLimitMax(env: Env): number {
+  const max = Number.parseInt(env.LOGIN_RATE_LIMIT_MAX ?? "5", 10);
+  return Number.isFinite(max) ? max : 5;
+}
+
+export function getLoginRateLimitWindowSeconds(env: Env): number {
+  const seconds = Number.parseInt(env.LOGIN_RATE_LIMIT_WINDOW_SECONDS ?? "900", 10);
+  return Number.isFinite(seconds) ? seconds : 900;
 }
 
 export function isRegistrationEnabled(env: Env): boolean {

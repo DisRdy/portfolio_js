@@ -1,6 +1,7 @@
 import { compareSync, hashSync } from "bcryptjs";
 import {
   blogSlugExists,
+  clearRateLimit,
   countUsersByEmail,
   createBlog,
   createComment,
@@ -31,6 +32,9 @@ import {
   formString,
   getCommentRateLimitMax,
   getCommentRateLimitWindowSeconds,
+  getLoginRateLimitMax,
+  getLoginRateLimitWindowSeconds,
+  getRequestIp,
   isDebug,
   isEmail,
   isRegistrationEnabled,
@@ -74,6 +78,9 @@ import {
 const PROJECT_CATEGORIES = ["design", "pdf", "cybersecurity", "tutorial", "certificate"] as const;
 const PUBLIC_PROJECT_FILTERS = ["design", "pdf", "cybersecurity", "tutorial", "certificate"] as const;
 const BLOG_STATUSES = ["draft", "published"] as const;
+const MAX_FORM_BODY_BYTES = 12 * 1024 * 1024;
+
+class PayloadTooLargeError extends Error {}
 
 function html(content: string, status = 200, headers?: HeadersInit): Response {
   return new Response(content, {
@@ -104,16 +111,29 @@ function redirect(location: string, status = 302): Response {
   });
 }
 
-function applySecurityHeaders(response: Response): Response {
+function applySecurityHeaders(request: Request, response: Response): Response {
   const newResponse = new Response(response.body, response);
+  const contentType = response.headers.get("Content-Type") ?? "";
 
   newResponse.headers.set("X-Content-Type-Options", "nosniff");
   newResponse.headers.set("X-Frame-Options", "SAMEORIGIN");
-  newResponse.headers.set("X-XSS-Protection", "1; mode=block");
-  newResponse.headers.set(
-    "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';"
-  );
+  newResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  newResponse.headers.set("Permissions-Policy", "camera=(), geolocation=(), microphone=()");
+  newResponse.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  newResponse.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+
+  if (contentType.includes("text/html")) {
+    newResponse.headers.set(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';",
+    );
+  } else if (contentType.includes("image/svg+xml")) {
+    newResponse.headers.set("Content-Security-Policy", "sandbox; default-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none';");
+  }
+
+  if (new URL(request.url).protocol === "https:") {
+    newResponse.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
 
   return newResponse;
 }
@@ -127,6 +147,14 @@ async function maybeReadFormData(request: Request): Promise<FormData | null> {
   const contentType = request.headers.get("Content-Type") ?? "";
   if (!contentType.includes("multipart/form-data") && !contentType.includes("application/x-www-form-urlencoded")) {
     return null;
+  }
+
+  const contentLengthHeader = request.headers.get("Content-Length");
+  if (contentLengthHeader) {
+    const contentLength = Number.parseInt(contentLengthHeader, 10);
+    if (Number.isFinite(contentLength) && contentLength > MAX_FORM_BODY_BYTES) {
+      throw new PayloadTooLargeError("The uploaded payload is too large.");
+    }
   }
 
   try {
@@ -294,17 +322,49 @@ function setValidationFlash(session: SessionState, location: string, errors: Rec
   return redirect(location);
 }
 
-async function handleLogin(env: Env, formData: FormData | null, session: SessionState): Promise<Response> {
+async function handleLogin(env: Env, formData: FormData | null, session: SessionState, request: Request): Promise<Response> {
   const errors: Record<string, string> = {};
   const email = validateRequiredText(formString(formData, "email"), "email", errors, { email: true });
   const password = validateRequiredText(formString(formData, "password"), "password", errors);
+  const nowUnix = Math.floor(Date.now() / 1000);
+  const requestIp = getRequestIp(request);
+  const normalizedEmail = email.toLowerCase();
+  const loginMaxAttempts = getLoginRateLimitMax(env);
+  const loginDecaySeconds = getLoginRateLimitWindowSeconds(env);
+  const loginIpKey = `login:ip:${requestIp}`;
+  const loginIdentityKey = normalizedEmail ? `login:identity:${requestIp}:${normalizedEmail}` : null;
 
   if (Object.keys(errors).length > 0) {
     return setValidationFlash(session, "/login", errors, oldInputs(formData, ["email"]));
   }
 
+  const [ipLimit, identityLimit] = await Promise.all([
+    getCommentRateLimit(env, loginIpKey, nowUnix),
+    loginIdentityKey
+      ? getCommentRateLimit(env, loginIdentityKey, nowUnix)
+      : Promise.resolve({ attempts: 0, expiresAt: 0 }),
+  ]);
+
+  if (ipLimit.attempts >= loginMaxAttempts || identityLimit.attempts >= loginMaxAttempts) {
+    const retryAt = Math.max(ipLimit.expiresAt, identityLimit.expiresAt);
+    const minutes = Math.max(1, Math.ceil((retryAt - nowUnix) / 60));
+    setFlash(session, {
+      error: `Too many login attempts. Please try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
+      old: {
+        email,
+      },
+    });
+    return redirect("/login");
+  }
+
   const user = await findUserByEmail(env, email);
   if (!user || !verifyPassword(password, user.password)) {
+    const failedAttempts = [hitCommentRateLimit(env, loginIpKey, nowUnix, loginDecaySeconds)];
+    if (loginIdentityKey) {
+      failedAttempts.push(hitCommentRateLimit(env, loginIdentityKey, nowUnix, loginDecaySeconds));
+    }
+    await Promise.all(failedAttempts);
+
     setFlash(session, {
       errors: {
         email: "The provided credentials do not match our records.",
@@ -315,6 +375,11 @@ async function handleLogin(env: Env, formData: FormData | null, session: Session
     });
     return redirect("/login");
   }
+
+  await Promise.all([
+    clearRateLimit(env, loginIpKey),
+    loginIdentityKey ? clearRateLimit(env, loginIdentityKey) : Promise.resolve(),
+  ]);
 
   regenerateSession(session);
   session.userId = user.id;
@@ -353,8 +418,8 @@ async function handleRegister(env: Env, formData: FormData | null, session: Sess
 }
 
 async function handleCommentCreate(env: Env, formData: FormData | null, session: SessionState, user: User | null, request: Request): Promise<Response> {
-  const ip = request.headers.get("CF-Connecting-IP") ?? request.headers.get("X-Forwarded-For") ?? "127.0.0.1";
-  const key = `send-comment:${ip.split(",")[0].trim()}`;
+  const ip = getRequestIp(request);
+  const key = `send-comment:${ip}`;
   const maxAttempts = getCommentRateLimitMax(env);
   const decaySeconds = getCommentRateLimitWindowSeconds(env);
   const current = await getCommentRateLimit(env, key, Math.floor(Date.now() / 1000));
@@ -379,6 +444,7 @@ async function handleCommentCreate(env: Env, formData: FormData | null, session:
     name,
     comment,
     userId: user?.id ?? null,
+    ipAddress: ip,
   });
   await hitCommentRateLimit(env, key, Math.floor(Date.now() / 1000), decaySeconds);
 
@@ -629,7 +695,7 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
     if (guestRedirect) {
       return guestRedirect;
     }
-    return handleLogin(env, formData, session);
+    return handleLogin(env, formData, session, request);
   }
 
   if (method === "GET" && path === "/register") {
@@ -815,6 +881,9 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
   }
 
   if (method === "GET" && path === "/git-test") {
+    if (!isDebug(env)) {
+      return notFound();
+    }
     return text("GIT DEPLOY OK 🚀");
   }
 
@@ -835,7 +904,19 @@ async function serveAssetsOr404(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     await ensureSchema(env);
-    const formData = await maybeReadFormData(request);
+    let formData: FormData | null = null;
+    try {
+      formData = await maybeReadFormData(request);
+    } catch (error) {
+      if (error instanceof PayloadTooLargeError) {
+        return applySecurityHeaders(
+          request,
+          html(renderErrorPage("Payload Too Large", "The submitted form exceeds the allowed upload size.", 413), 413),
+        );
+      }
+      throw error;
+    }
+
     const method = normalizeMethod(request.method, formData);
     const session = await loadSession(request, env);
     const flash = pullFlash(session);
@@ -858,7 +939,7 @@ export default {
       response = html(renderErrorPage("Internal Server Error", isDebug(env) ? message : "Internal Server Error", 500), 500);
     }
 
-    response = applySecurityHeaders(response);
+    response = applySecurityHeaders(request, response);
     return commitSession(request, env, session, response);
   },
 };

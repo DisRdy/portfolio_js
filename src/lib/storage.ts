@@ -33,7 +33,7 @@ export function encodeStorageKey(value: string): string {
 
 function getSupabaseClient(env: Env): SupabaseClient {
   const url = requireEnv(env.SUPABASE_URL, "SUPABASE_URL");
-  const key = requireEnv(env.SUPABASE_ANON_KEY, "SUPABASE_ANON_KEY");
+  const key = env.SUPABASE_SERVICE_ROLE_KEY?.trim() || requireEnv(env.SUPABASE_ANON_KEY, "SUPABASE_ANON_KEY");
   const cacheKey = `${url}::${key}`;
 
   if (!cachedClient || cachedClientKey !== cacheKey) {
@@ -83,12 +83,7 @@ export function getPublicStorageUrl(env: Env, key: string): string {
 }
 
 export function resolveStoredStorageUrl(env: Env, storedValue: string): string {
-  const value = storedValue.trim();
-  if (/^https?:\/\//i.test(value)) {
-    return value;
-  }
-
-  const key = extractStorageKey(value);
+  const key = extractStorageKey(storedValue);
   if (!key) {
     throw new Error("Invalid storage reference.");
   }
