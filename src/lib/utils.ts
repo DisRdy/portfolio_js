@@ -219,8 +219,42 @@ export function truncate(value: string | null | undefined, length: number): stri
   return `${text.slice(0, Math.max(0, length - 3))}...`;
 }
 
+function encodeStoragePath(path: string): string {
+  return path.split("/").map((segment) => encodeURIComponent(segment)).join("/");
+}
+
+function decodeStoragePath(path: string): string {
+  return path.split("/").map((segment) => decodeURIComponent(segment)).join("/");
+}
+
 export function storageUrl(path: string): string {
-  return `/storage/${path.split("/").map((segment) => encodeURIComponent(segment)).join("/")}`;
+  const value = path.trim();
+  const supabasePrefix = "/storage/v1/object/public/portfolio/";
+
+  if (!value) {
+    return "/storage";
+  }
+
+  if (value.startsWith("/storage/")) {
+    return value;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const url = new URL(value);
+      const markerIndex = url.pathname.indexOf(supabasePrefix);
+      if (markerIndex === -1) {
+        return value;
+      }
+
+      const key = decodeStoragePath(url.pathname.slice(markerIndex + supabasePrefix.length));
+      return `/storage/${encodeStoragePath(key)}`;
+    } catch {
+      return value;
+    }
+  }
+
+  return `/storage/${encodeStoragePath(value.replace(/^\/+/, ""))}`;
 }
 
 export function isEmail(value: string): boolean {

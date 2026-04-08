@@ -125,31 +125,23 @@ CREATE TABLE IF NOT EXISTS blogs (
 
 let schemaReadyPromise: Promise<void> | null = null;
 
+function splitSchemaStatements(sql: string): string[] {
+  return sql
+    .split(/;\s*(?:\r?\n|$)/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.length > 0);
+}
+
 export function ensureSchema(env: Env): Promise<void> {
   if (!schemaReadyPromise) {
     schemaReadyPromise = (async () => {
-      // Execute PRAGMA separately to enable foreign keys
-      await env.DB.prepare("PRAGMA foreign_keys = ON").run();
-      
-      // Split schema by semicolon and execute each statement
-      const statements = SCHEMA_SQL
-        .split(';')
-        .map((stmt) => stmt.trim())
-        .filter((stmt) => stmt.length > 0);
+      await env.DB.exec("PRAGMA foreign_keys = ON");
 
-      // Use batch for multiple statements
-      const batch = statements.map((stmt) => env.DB.prepare(stmt));
-      
-      try {
-        await env.DB.batch(batch);
-      } catch (error) {
-        // Log but don't fail if tables already exist
-        const errorStr = String(error);
-        if (!errorStr.includes('already exists') && !errorStr.includes('SQLITE_ERROR')) {
-          throw error;
-        }
+      const statements = splitSchemaStatements(SCHEMA_SQL);
+      if (statements.length > 0) {
+        await env.DB.batch(statements.map((statement) => env.DB.prepare(statement)));
       }
-      
+
       return undefined;
     })()
       .catch((error) => {

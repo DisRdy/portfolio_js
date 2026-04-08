@@ -38,6 +38,12 @@ import {
   sqlNow,
 } from "./lib/utils";
 import {
+  deleteStoredFile,
+  proxyStorageObject,
+  resolveStoredStorageUrl,
+  uploadPublicFile,
+} from "./lib/storage";
+import {
   commitSession,
   loadSession,
   pullFlash,
@@ -287,29 +293,6 @@ function setValidationFlash(session: SessionState, location: string, errors: Rec
   return redirect(location);
 }
 
-async function uploadToR2(env: Env, key: string, file: File): Promise<void> {
-  await env.UPLOADS.put(key, file.stream(), {
-    httpMetadata: {
-      contentType: file.type || undefined,
-    },
-    customMetadata: {
-      originalFilename: file.name,
-    },
-  });
-}
-
-async function serveStorageObject(env: Env, key: string): Promise<Response> {
-  const object = await env.UPLOADS.get(key);
-  if (!object) {
-    return notFound();
-  }
-
-  const headers = new Headers();
-  object.writeHttpMetadata(headers);
-  headers.set("Cache-Control", "public, max-age=3600");
-  return new Response(object.body, { headers });
-}
-
 async function handleLogin(env: Env, formData: FormData | null, session: SessionState): Promise<Response> {
   const errors: Record<string, string> = {};
   const email = validateRequiredText(formString(formData, "email"), "email", errors, { email: true });
@@ -417,13 +400,13 @@ async function handleProjectCreate(env: Env, formData: FormData | null, session:
 
   try {
     const key = buildProjectStorageKey(category!, file!.name);
-    await uploadToR2(env, key, file!);
+    const uploaded = await uploadPublicFile(env, key, file!);
     await createProject(env, {
       userId: user.id,
       title,
       description,
       category: category!,
-      filePath: key,
+      filePath: uploaded.publicUrl,
       originalFilename: file!.name,
       fileSize: file!.size,
     });
@@ -460,11 +443,11 @@ async function handleProjectUpdate(env: Env, formData: FormData | null, session:
   try {
     if (file) {
       if (project.filePath) {
-        await env.UPLOADS.delete(project.filePath);
+        await deleteStoredFile(env, project.filePath);
       }
       const key = buildProjectStorageKey(category!, file.name);
-      await uploadToR2(env, key, file);
-      project.filePath = key;
+      const uploaded = await uploadPublicFile(env, key, file);
+      project.filePath = uploaded.publicUrl;
       project.originalFilename = file.name;
       project.fileSize = file.size;
     }
@@ -495,7 +478,7 @@ async function handleProjectDelete(env: Env, session: SessionState, user: User, 
 
   try {
     if (project.filePath) {
-      await env.UPLOADS.delete(project.filePath);
+      await deleteStoredFile(env, project.filePath);
     }
     await deleteProject(env, project.id);
     setFlash(session, { success: "Project berhasil dihapus!" });
@@ -526,8 +509,8 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
 
   let imagePath: string | null = null;
   if (image) {
-    imagePath = buildBlogStorageKey(image.name);
-    await uploadToR2(env, imagePath, image);
+    const key = buildBlogStorageKey(image.name);
+    imagePath = (await uploadPublicFile(env, key, image)).publicUrl;
   }
 
   await createBlog(env, {
@@ -569,10 +552,10 @@ async function handleBlogUpdate(env: Env, formData: FormData | null, session: Se
 
   if (image) {
     if (blog.image) {
-      await env.UPLOADS.delete(blog.image);
+      await deleteStoredFile(env, blog.image);
     }
-    blog.image = buildBlogStorageKey(image.name);
-    await uploadToR2(env, blog.image, image);
+    const key = buildBlogStorageKey(image.name);
+    blog.image = (await uploadPublicFile(env, key, image)).publicUrl;
   }
 
   blog.title = title;
@@ -597,7 +580,7 @@ async function handleBlogDelete(env: Env, session: SessionState, user: User, blo
   }
 
   if (blog.image) {
-    await env.UPLOADS.delete(blog.image);
+    await deleteStoredFile(env, blog.image);
   }
   await deleteBlog(env, blog.id);
   setFlash(session, { success: "Blog deleted successfully." });
@@ -791,22 +774,33 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
       return notFound();
     }
 
-    const object = await env.UPLOADS.get(project.filePath);
-    if (!object) {
+    const upstream = await fetch(resolveStoredStorageUrl(env, project.filePath));
+    if (upstream.status === 404) {
       return notFound();
+    }
+    if (!upstream.ok) {
+      throw new Error(`Storage request failed with status ${upstream.status}.`);
     }
 
     const headers = new Headers();
-    object.writeHttpMetadata(headers);
+    const contentType = upstream.headers.get("Content-Type");
+    if (contentType) {
+      headers.set("Content-Type", contentType);
+    }
+    const contentLength = upstream.headers.get("Content-Length");
+    if (contentLength) {
+      headers.set("Content-Length", contentLength);
+    }
     headers.set("Cache-Control", "private, no-store");
     headers.set("Content-Disposition", `attachment; filename="${project.originalFilename.replaceAll('"', "")}"`);
-    return new Response(object.body, { headers });
+    return new Response(upstream.body, { headers, status: upstream.status });
   }
 
   const storageMatch = path.match(/^\/storage\/(.+)$/);
   if (storageMatch && method === "GET") {
     const key = storageMatch[1].split("/").map((segment) => decodeURIComponent(segment)).join("/");
-    return serveStorageObject(env, key);
+    const response = await proxyStorageObject(env, key);
+    return response.status === 404 ? notFound() : response;
   }
 
   if (method === "GET" && path === "/fix-storage") {

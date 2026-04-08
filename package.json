@@ -10,6 +10,7 @@
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.102.1",
     "bcryptjs": "^3.0.2"
   },
   "devDependencies": {

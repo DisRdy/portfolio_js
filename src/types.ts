@@ -1,10 +1,11 @@
 export interface Env {
   DB: D1Database;
-  UPLOADS: R2Bucket;
   ASSETS?: Fetcher;
   APP_NAME?: string;
   APP_URL?: string;
   APP_DEBUG?: string;
+  SUPABASE_URL?: string;
+  SUPABASE_ANON_KEY?: string;
   SESSION_COOKIE_NAME?: string;
   SESSION_TTL_MINUTES?: string;
   COMMENTS_RATE_LIMIT_MAX?: string;

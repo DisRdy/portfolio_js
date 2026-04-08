@@ -27,42 +27,6 @@ interface D1Database {
   exec(query: string): Promise<{ count: number; duration: number }>;
 }
 
-interface R2HTTPMetadata {
-  contentType?: string;
-  contentLanguage?: string;
-  contentDisposition?: string;
-  contentEncoding?: string;
-  cacheControl?: string;
-  cacheExpiry?: Date;
-}
-
-interface R2ObjectBody {
-  key: string;
-  size: number;
-  body: ReadableStream<Uint8Array>;
-  bodyUsed: boolean;
-  etag: string;
-  httpEtag: string;
-  httpMetadata?: R2HTTPMetadata;
-  uploaded: Date;
-  writeHttpMetadata(headers: Headers): void;
-}
-
-interface R2PutOptions {
-  httpMetadata?: R2HTTPMetadata;
-  customMetadata?: Record<string, string>;
-}
-
-interface R2Bucket {
-  get(key: string): Promise<R2ObjectBody | null>;
-  put(
-    key: string,
-    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob | null,
-    options?: R2PutOptions,
-  ): Promise<void>;
-  delete(keys: string | string[]): Promise<void>;
-}
-
 interface Fetcher {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }
