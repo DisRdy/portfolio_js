@@ -20,11 +20,7 @@ run_worker_first = true
 [[d1_databases]]
 binding = "DB"
 database_name = "portfolio-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "3059bb2b-5719-454a-aeff-ef2d9461e0d2"
 preview_database_id = "DB"
 migrations_dir = "migrations"
 
-[[r2_buckets]]
-binding = "UPLOADS"
-bucket_name = "portfolio-uploads"
-preview_bucket_name = "portfolio-uploads-preview"
