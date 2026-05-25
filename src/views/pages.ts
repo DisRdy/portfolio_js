@@ -221,7 +221,7 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
             <p class="home-body-text">Saya adalah mahasiswa Informatika yang senang membangun produk web yang rapi, memahami data, dan merapikan masalah menjadi alur kerja yang bisa dipakai. Di antara kode, analisis, dan eksplorasi sistem, saya mencari cara agar teknologi terasa sederhana, jelas, dan berguna.</p>
             <div class="home-info-grid">
                 <span><span class="material-symbols-outlined">location_on</span>Bali, Indonesia</span>
-                <span><span class="material-symbols-outlined">school</span>INSTIKI - Informatika</span>
+                <span><span class="material-symbols-outlined">school</span>Teknik Informatika - Manajemen Data dan Informasi</span>
             </div>
         </section>
 
