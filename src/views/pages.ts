@@ -74,7 +74,6 @@ function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: 
     </nav>
 
     <div class="admin-user-card">
-        <div class="admin-avatar">DR</div>
         <div>
             <p>Disna Radita</p>
             <span>Administrator</span>
@@ -91,10 +90,6 @@ function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: 
 </aside>
 
 <header class="admin-topbar">
-    <div>
-        <span class="admin-env-label">Environment:</span>
-        <span class="admin-env-value">Production</span>
-    </div>
     <div class="admin-topbar-actions">
         <span class="material-symbols-outlined admin-topbar-icon">notifications</span>
         <span class="material-symbols-outlined admin-topbar-icon">search</span>
@@ -585,8 +580,6 @@ export function renderDashboardPage(summary: DashboardSummary, csrfToken: string
                 <div class="records-toolbar">
                     <div class="records-tabs">
                         <a href="/dashboard" class="active">All Records</a>
-                        <a href="/dashboard/projects">Projects</a>
-                        <a href="/dashboard/blogs">Writing</a>
                     </div>
                     <div class="records-sort">
                         <span>Sort by</span>
@@ -723,9 +716,6 @@ export function renderDashboardProjectsPage(options: {
                         </div>`;
     }).join("")}
 
-            <a href="/dashboard" class="btn-secondary">
-                &larr; Back to Dashboard
-            </a>
         </div>
     </div>
 
@@ -977,10 +967,6 @@ export function renderDashboardBlogsPage(options: {
                     <p>You haven't created any blog posts yet.</p>
                 </div>`}
             </div>
-
-            <a href="/dashboard" class="btn-secondary">
-                &larr; Back to Dashboard
-            </a>
         </div>
     </div>
 
