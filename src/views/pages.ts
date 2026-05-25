@@ -323,32 +323,71 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
   const old = flash.old;
   return htmlDocument(
     "Login",
-    `<div class="container">
-        <section class="auth-wrapper">
-            <h2>Login</h2>
+    `<div class="login-bg" aria-hidden="true">
+        <div class="login-glow login-glow-a"></div>
+        <div class="login-glow login-glow-b"></div>
+    </div>
 
-            <form method="POST" action="/login">
+    <main class="login-shell">
+        <header class="login-brand">
+            <div class="login-brand-icon">
+                <span class="material-symbols-outlined">architecture</span>
+            </div>
+            <div>
+                <h1>DevArchitect</h1>
+                <p>Precision Control Portal</p>
+            </div>
+        </header>
+
+        <section class="login-panel">
+            ${flash.error ? `<div class="login-alert">${escapeHtml(flash.error)}</div>` : ""}
+
+            <form method="POST" action="/login" class="login-form">
                 <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
 
-                <div>
-                    <label for="email" class="form-group-label">Email</label>
+                <div class="login-field">
+                    <label for="email">Work Email</label>
                     <input type="email" name="email" id="email" value="${escapeAttribute(oldValue(old, "email"))}" required autofocus
-                        class="form-input">
-                    ${renderValidationError(errors, "email", "text-red-500 text-sm")}
+                        placeholder="architect@dev.io">
+                    ${renderValidationError(errors, "email", "login-error")}
                 </div>
 
-                <div>
-                    <label for="password" class="form-group-label">Password</label>
-                    <input type="password" name="password" id="password" required class="form-input">
-                    ${renderValidationError(errors, "password", "text-red-500 text-sm")}
+                <div class="login-field">
+                    <div class="login-label-row">
+                        <label for="password">Access Token</label>
+                        <span>Secure</span>
+                    </div>
+                    <input type="password" name="password" id="password" required placeholder="••••••••••••">
+                    ${renderValidationError(errors, "password", "login-error")}
                 </div>
 
-                <button type="submit" class="btn">
-                    Log In
+                <button type="submit" class="login-submit">
+                    <span>Sign In</span>
+                    <span class="material-symbols-outlined">arrow_forward</span>
                 </button>
             </form>
+
+            <p class="login-secondary">
+                New to the architecture?
+                <a href="/register">Register access</a>
+            </p>
         </section>
-    </div>`,
+
+        <footer class="login-footer">
+            <div class="login-status">
+                <span></span>
+                <strong>System Status: Optimal</strong>
+            </div>
+            <p>&copy; 2025 DevArchitect. Precision Engineered.</p>
+        </footer>
+    </main>
+
+    <aside class="login-rail" aria-hidden="true">
+        <span></span>
+        <p>Authentication Layer</p>
+        <span></span>
+    </aside>`,
+    "login-page",
   );
 }
 
