@@ -232,7 +232,6 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
                     <span class="material-symbols-outlined">work</span>
                     <h2>Experience</h2>
                 </div>
-                <a href="/experience">View all &gt;</a>
             </div>
             <div class="home-list">
                 ${experiences.map(([role, org, date]) => `<div class="home-list-item">
