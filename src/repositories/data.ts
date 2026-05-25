@@ -1,4 +1,4 @@
-import type { Blog, Comment, DashboardSummary, Env, Project, User } from "../types";
+import type { Blog, BlogContentBlock, BlogContentBlockType, Comment, DashboardSummary, Env, Project, User } from "../types";
 import { sqlNow } from "../lib/utils";
 
 interface CacheRow {
@@ -56,14 +56,73 @@ function mapComment(row: Record<string, unknown>): Comment {
   };
 }
 
+const BLOG_BLOCK_TYPES: BlogContentBlockType[] = ["paragraph", "heading", "blockquote", "code", "image"];
+
+function parseTags(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(String(value));
+    if (Array.isArray(parsed)) {
+      return parsed.map((tag) => String(tag).trim()).filter(Boolean);
+    }
+  } catch {
+    return String(value).split(",").map((tag) => tag.trim()).filter(Boolean);
+  }
+
+  return [];
+}
+
+function parseContentBlocks(value: unknown, fallbackContent: string): BlogContentBlock[] {
+  if (value) {
+    try {
+      const parsed = JSON.parse(String(value));
+      if (Array.isArray(parsed)) {
+        return parsed.flatMap((item): BlogContentBlock[] => {
+          const candidate = item as Partial<BlogContentBlock>;
+          if (!candidate || !BLOG_BLOCK_TYPES.includes(candidate.type as BlogContentBlockType)) {
+            return [];
+          }
+
+          const block: BlogContentBlock = {
+            type: candidate.type as BlogContentBlockType,
+            value: String(candidate.value ?? "").trim(),
+          };
+
+          if (candidate.caption) {
+            block.caption = String(candidate.caption).trim();
+          }
+
+          if (candidate.language) {
+            block.language = String(candidate.language).trim();
+          }
+
+          return block.value ? [block] : [];
+        });
+      }
+    } catch {
+      // Fall back to the legacy content field below.
+    }
+  }
+
+  const content = fallbackContent.trim();
+  return content ? [{ type: "paragraph", value: content }] : [];
+}
+
 function mapBlog(row: Record<string, unknown>): Blog {
+  const content = String(row.content ?? "");
+
   return {
     id: toNumber(row.id),
     userId: toNumber(row.user_id),
     title: String(row.title ?? ""),
     subtitle: row.subtitle ? String(row.subtitle) : null,
     slug: String(row.slug ?? ""),
-    content: String(row.content ?? ""),
+    category: row.category ? String(row.category) : null,
+    content,
+    contentBlocks: parseContentBlocks(row.content_blocks, content),
     excerpt: row.excerpt ? String(row.excerpt) : null,
     thumbnail: row.thumbnail ? String(row.thumbnail) : null,
     metaTitle: row.meta_title ? String(row.meta_title) : null,
@@ -71,6 +130,8 @@ function mapBlog(row: Record<string, unknown>): Blog {
     status: String(row.status ?? "draft") as "draft" | "published",
     publishedAt: row.published_at ? String(row.published_at) : null,
     image: row.image ? String(row.image) : null,
+    imageCaption: row.image_caption ? String(row.image_caption) : null,
+    tags: parseTags(row.tags),
     createdAt: row.created_at ? String(row.created_at) : null,
     updatedAt: row.updated_at ? String(row.updated_at) : null,
   };
@@ -249,7 +310,7 @@ export async function listRecentBlogsForUser(env: Env, userId: number, limit: nu
 export async function listPublishedBlogs(env: Env): Promise<Blog[]> {
   const rows = await allRows<Record<string, unknown>>(
     env.DB.prepare(
-      "SELECT title, subtitle, image, slug, published_at FROM blogs WHERE status = 'published' ORDER BY published_at DESC, id DESC",
+      "SELECT * FROM blogs WHERE status = 'published' ORDER BY published_at DESC, id DESC",
     ),
   );
   return rows.map(mapBlog);
@@ -276,24 +337,32 @@ export async function createBlog(env: Env, data: {
   userId: number;
   title: string;
   subtitle: string | null;
+  category: string | null;
+  tags: string[];
   image: string | null;
+  imageCaption: string | null;
   slug: string;
   content: string;
+  contentBlocks: BlogContentBlock[];
   status: "draft" | "published";
   publishedAt: string | null;
 }): Promise<void> {
   const now = sqlNow();
   await env.DB.prepare(
     `INSERT INTO blogs
-      (user_id, title, subtitle, image, slug, content, excerpt, thumbnail, meta_title, meta_description, status, published_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, title, subtitle, category, tags, image, image_caption, slug, content, content_blocks, excerpt, thumbnail, meta_title, meta_description, status, published_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
     data.userId,
     data.title,
     data.subtitle,
+    data.category,
+    JSON.stringify(data.tags),
     data.image,
+    data.imageCaption,
     data.slug,
     data.content,
+    JSON.stringify(data.contentBlocks),
     null,
     null,
     null,
@@ -308,13 +377,17 @@ export async function createBlog(env: Env, data: {
 export async function updateBlog(env: Env, blog: Blog): Promise<void> {
   await env.DB.prepare(
     `UPDATE blogs
-     SET title = ?, subtitle = ?, image = ?, content = ?, status = ?, published_at = ?, updated_at = ?
+     SET title = ?, subtitle = ?, category = ?, tags = ?, image = ?, image_caption = ?, content = ?, content_blocks = ?, status = ?, published_at = ?, updated_at = ?
      WHERE id = ?`,
   ).bind(
     blog.title,
     blog.subtitle,
+    blog.category,
+    JSON.stringify(blog.tags),
     blog.image,
+    blog.imageCaption,
     blog.content,
+    JSON.stringify(blog.contentBlocks),
     blog.status,
     blog.publishedAt,
     sqlNow(),

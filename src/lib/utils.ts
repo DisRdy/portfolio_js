@@ -277,7 +277,7 @@ export function isEmail(value: string): boolean {
 
 export function htmlDocument(title: string, body: string, bodyClass = ""): string {
   const bodyClassAttribute = bodyClass ? ` class="${escapeAttribute(bodyClass)}"` : "";
-  const stylesheetLink = bodyClass === "admin-page" ? `    <link rel="stylesheet" href="/app.css">\n` : "";
+  const stylesheetLink = bodyClass ? `    <link rel="stylesheet" href="/app.css">\n` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">

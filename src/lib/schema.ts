@@ -108,7 +108,9 @@ CREATE TABLE IF NOT EXISTS blogs (
   user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
+  category TEXT,
   content TEXT NOT NULL,
+  content_blocks TEXT,
   excerpt TEXT,
   thumbnail TEXT,
   meta_title TEXT,
@@ -119,6 +121,8 @@ CREATE TABLE IF NOT EXISTS blogs (
   updated_at TEXT,
   subtitle TEXT,
   image TEXT,
+  image_caption TEXT,
+  tags TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 `;
@@ -140,6 +144,21 @@ export function ensureSchema(env: Env): Promise<void> {
       const statements = splitSchemaStatements(SCHEMA_SQL);
       if (statements.length > 0) {
         await env.DB.batch(statements.map((statement) => env.DB.prepare(statement)));
+      }
+
+      const blogColumns = await env.DB.prepare("PRAGMA table_info(blogs)").all<{ name: string }>();
+      const existingColumns = new Set((blogColumns.results ?? []).map((column) => column.name));
+      const requiredColumns: Array<[string, string]> = [
+        ["category", "TEXT"],
+        ["content_blocks", "TEXT"],
+        ["image_caption", "TEXT"],
+        ["tags", "TEXT"],
+      ];
+
+      for (const [column, definition] of requiredColumns) {
+        if (!existingColumns.has(column)) {
+          await env.DB.prepare(`ALTER TABLE blogs ADD COLUMN ${column} ${definition}`).run();
+        }
       }
 
       return undefined;

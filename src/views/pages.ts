@@ -1,4 +1,4 @@
-import type { Blog, Comment, DashboardSummary, FlashData, Project, User } from "../types";
+import type { Blog, BlogContentBlock, Comment, DashboardSummary, FlashData, Project, User } from "../types";
 import {
   baseOldValues,
   escapeAttribute,
@@ -122,6 +122,61 @@ function oldValue(old: Record<string, string> | undefined, key: string): string 
 
 function selectedValue(old: Record<string, string> | undefined, key: string, value: string): string {
   return oldValue(old, key) === value ? "selected" : "";
+}
+
+function blogBlocksJson(blocks: BlogContentBlock[]): string {
+  return JSON.stringify(blocks.length > 0 ? blocks : [{ type: "paragraph", value: "" }]);
+}
+
+function blogTagsInput(tags: string[]): string {
+  return tags.join(", ");
+}
+
+function blogCategoryLabel(blog: Blog): string {
+  return blog.category?.trim() || "System Architecture";
+}
+
+function renderBlogBlock(block: BlogContentBlock): string {
+  const value = escapeHtml(block.value).replaceAll("\n", "<br>");
+
+  if (block.type === "heading") {
+    return `<h2 class="article-section-title">${value}</h2>`;
+  }
+
+  if (block.type === "blockquote") {
+    return `<blockquote class="article-quote">${value}</blockquote>`;
+  }
+
+  if (block.type === "code") {
+    const highlightedCode = escapeHtml(block.value)
+      .replace(/\b(async|await|function|const|let|var|return|if|else|for|while|try|catch|new)\b/g, `<span class="code-keyword">$1</span>`)
+      .replace(/\b(true|false|null|undefined)\b/g, `<span class="code-literal">$1</span>`)
+      .replace(/(&quot;[^&]*?&quot;|&#39;[^&]*?&#39;)/g, `<span class="code-string">$1</span>`);
+
+    return `<figure class="article-code-block">
+        ${block.language ? `<figcaption>${escapeHtml(block.language)}</figcaption>` : ""}
+        <pre><code>${highlightedCode}</code></pre>
+    </figure>`;
+  }
+
+  if (block.type === "image") {
+    return `<figure class="article-inline-image">
+        <img src="${escapeAttribute(storageUrl(block.value))}" alt="${escapeAttribute(block.caption || "Article image")}">
+        ${block.caption ? `<figcaption>${escapeHtml(block.caption)}</figcaption>` : ""}
+    </figure>`;
+  }
+
+  return `<p>${value}</p>`;
+}
+
+function renderBlogContent(blog: Blog): string {
+  const blocks = blog.contentBlocks.length > 0 ? blog.contentBlocks : [{ type: "paragraph", value: blog.content }] as BlogContentBlock[];
+  return blocks.map(renderBlogBlock).join("");
+}
+
+function renderTagChips(tags: string[]): string {
+  const resolvedTags = tags.length > 0 ? tags : ["Architecture", "Design Philosophy", "Systems"];
+  return resolvedTags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
 }
 
 export function renderHomePage(): string {
@@ -801,67 +856,75 @@ export function renderDashboardProjectsPage(options: {
 }
 
 export function renderBlogIndexPage(blogs: Blog[]): string {
-  return publicLayout(
+  return htmlDocument(
     "Blog - Dr",
-    "blog",
-    `<header>
-        <p class="brand-ts">Thoughts & Articles</p>
-    </header>
+    `${publicNavbar("blog")}
 
-    <div class="container">
-        <section>
-            <h2>Latest Posts</h2>
+    <main class="blog-shell blog-index-shell">
+        <section class="blog-index-hero">
+            <p>Writing</p>
+            <h1>Architectural notes, systems thinking, and field reports.</h1>
+        </section>
 
+        <section class="blog-index-list">
             ${blogs.length === 0 ? `<div class="alert alert-info">
                 <p>No posts published yet. Check back later!</p>
-            </div>` : `<div class="blog-list">
-                ${blogs.map((blog) => `<div class="blog-card project-card">
-                        <div class="project-body">
+            </div>` : blogs.map((blog) => `<article class="blog-index-card">
                             <a href="/blog/${encodeURIComponent(blog.slug)}" class="blog-link">
-                                <h3 class="blog-title">${escapeHtml(blog.title)}</h3>
+                                <span>${escapeHtml(blogCategoryLabel(blog))}</span>
+                                <h2>${escapeHtml(blog.title)}</h2>
                             </a>
                             ${blog.subtitle ? `<p class="blog-subtitle">${escapeHtml(blog.subtitle)}</p>` : ""}
                             <small class="blog-date">
                                 ${escapeHtml(formatDateBlog(blog.publishedAt))}
                             </small>
-                        </div>
-                    </div>`).join("")}
-            </div>`}
+                    </article>`).join("")}
         </section>
-    </div>`,
-    `&copy; ${new Date().getUTCFullYear()} Dr`,
+    </main>
+
+    ${footer(`&copy; ${new Date().getUTCFullYear()} Dr`)}`,
+    "blog-page",
   );
 }
 
 export function renderBlogShowPage(blog: Blog): string {
-  return publicLayout(
+  return htmlDocument(
     `${blog.title} - Dr`,
-    "blog",
-    `<div class="container blog-detail-container">
+    `${publicNavbar("blog")}
+
+    <main class="blog-shell">
         <article class="blog-article">
+            <a href="/blog" class="article-back-link">&lt; Back to writing</a>
+
             <header class="blog-header">
-                <h1 class="article-title">${escapeHtml(blog.title)}</h1>
-                ${blog.subtitle ? `<p class="article-subtitle">${escapeHtml(blog.subtitle)}</p>
-                    ${blog.image ? `<div class="article-image-container">
-                            <img src="${escapeAttribute(storageUrl(blog.image))}" alt="${escapeAttribute(blog.title)}" class="article-image">
-                        </div>` : ""}` : ""}
-                <div class="article-meta">
-                    <span>Published on ${escapeHtml(formatDateBlog(blog.publishedAt))}</span>
+                <div class="article-kicker">
+                    <span>${escapeHtml(blogCategoryLabel(blog))}</span>
+                    <time datetime="${escapeAttribute(blog.publishedAt ?? "")}">${escapeHtml(formatDateBlog(blog.publishedAt))}</time>
                 </div>
+                <h1 class="article-title">${escapeHtml(blog.title)}</h1>
+                ${blog.subtitle ? `<p class="article-subtitle">${escapeHtml(blog.subtitle)}</p>` : ""}
             </header>
 
-            <div class="article-content">
-                ${escapeHtml(blog.content).replaceAll("\n", "<br>")}
-            </div>
+            ${blog.image ? `<figure class="article-hero-image">
+                <img src="${escapeAttribute(storageUrl(blog.image))}" alt="${escapeAttribute(blog.title)}">
+                ${blog.imageCaption ? `<figcaption>${escapeHtml(blog.imageCaption)}</figcaption>` : ""}
+            </figure>` : ""}
+
+            <div class="article-content">${renderBlogContent(blog)}</div>
 
             <div class="article-footer">
-                <a href="/blog" class="btn-secondary">
-                    &larr; Back to Articles
-                </a>
+                <div class="article-tags">${renderTagChips(blog.tags)}</div>
+                <div class="article-actions">
+                    <span><span class="material-symbols-outlined">favorite</span> 1.2k</span>
+                    <span><span class="material-symbols-outlined">chat_bubble</span> 48</span>
+                    <button type="button" aria-label="Share article"><span class="material-symbols-outlined">share</span></button>
+                </div>
             </div>
         </article>
-    </div>`,
-    `&copy; ${new Date().getUTCFullYear()} Dr`,
+    </main>
+
+    ${footer(`&copy; ${new Date().getUTCFullYear()} Dr`)}`,
+    "blog-page",
   );
 }
 
@@ -872,7 +935,7 @@ export function renderDashboardBlogsPage(options: {
 }): string {
   const { blogs, flash, csrfToken } = options;
   const errors = flash.errors;
-  const old = baseOldValues(flash.old, ["title", "subtitle", "content", "status", "published_at"]);
+  const old = baseOldValues(flash.old, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]);
 
   return htmlDocument(
     "Manage Blogs - Dashboard",
@@ -902,13 +965,15 @@ export function renderDashboardBlogsPage(options: {
                             </div>
                             ${blog.subtitle ? `<p>${escapeHtml(truncate(blog.subtitle, 80))}</p>` : ""}
                             <p class="file-details">
-                                <small>Published: ${blog.publishedAt ? escapeHtml(formatDateShort(blog.publishedAt)) : "-"}</small>
+                                <small>${escapeHtml(blogCategoryLabel(blog))} / Published: ${blog.publishedAt ? escapeHtml(formatDateShort(blog.publishedAt)) : "-"}</small>
                             </p>
 
                             <div class="project-item-actions">
                                 <button type="button" class="btn-edit open-edit-modal" data-id="${blog.id}"
                                     data-title="${escapeAttribute(blog.title)}" data-subtitle="${escapeAttribute(blog.subtitle ?? "")}"
-                                    data-content="${escapeAttribute(blog.content)}" data-status="${escapeAttribute(blog.status)}"
+                                    data-category="${escapeAttribute(blog.category ?? "")}" data-tags="${escapeAttribute(blogTagsInput(blog.tags))}"
+                                    data-image-caption="${escapeAttribute(blog.imageCaption ?? "")}"
+                                    data-content-blocks="${escapeAttribute(blogBlocksJson(blog.contentBlocks))}" data-status="${escapeAttribute(blog.status)}"
                                     data-published-at="${escapeAttribute(blog.publishedAt ? blog.publishedAt.replace(" ", "T").slice(0, 16) : "")}"
                                     data-image="${escapeAttribute(blog.image ?? "")}"
                                     data-update-url="/dashboard/blogs/${blog.id}">
@@ -956,6 +1021,20 @@ export function renderDashboardBlogsPage(options: {
                     ${renderValidationError(errors, "subtitle")}
                 </div>
 
+                <div class="form-grid-2">
+                    <div>
+                        <label for="create-category" class="form-group-label">Category</label>
+                        <input type="text" name="category" id="create-category" class="form-input"
+                            placeholder="System Architecture" value="${escapeAttribute(oldValue(old, "category"))}">
+                        ${renderValidationError(errors, "category")}
+                    </div>
+                    <div>
+                        <label for="create-tags" class="form-group-label">Tags</label>
+                        <input type="text" name="tags" id="create-tags" class="form-input"
+                            placeholder="Architecture, Systems" value="${escapeAttribute(oldValue(old, "tags"))}">
+                    </div>
+                </div>
+
                 <div>
                     <label for="create-image" class="form-group-label">Cover Image (Optional)</label>
                     <input type="file" name="image" id="create-image" class="form-input" accept="image/*">
@@ -963,13 +1042,30 @@ export function renderDashboardBlogsPage(options: {
                 </div>
 
                 <div>
-                    <label for="create-content" class="form-group-label">Content</label>
-                    <textarea name="content" id="create-content" class="form-textarea" required
-                        rows="8">${escapeHtml(oldValue(old, "content"))}</textarea>
-                    ${renderValidationError(errors, "content")}
+                    <label for="create-image-caption" class="form-group-label">Hero Image Caption</label>
+                    <input type="text" name="image_caption" id="create-image-caption" class="form-input"
+                        placeholder="Fig 1: The geometry of architectural debt." value="${escapeAttribute(oldValue(old, "image_caption"))}">
+                    ${renderValidationError(errors, "image_caption")}
                 </div>
 
                 <div>
+                    <label class="form-group-label">Content Blocks</label>
+                    <input type="hidden" name="content_blocks" id="create-content-blocks"
+                        value="${escapeAttribute(oldValue(old, "content_blocks") || blogBlocksJson([{ type: "paragraph", value: "" }]))}">
+                    <div class="block-editor" data-block-editor data-target="create-content-blocks">
+                        <div class="block-editor-list"></div>
+                        <div class="block-editor-actions">
+                            <button type="button" data-add-block="paragraph">Paragraph</button>
+                            <button type="button" data-add-block="heading">Heading</button>
+                            <button type="button" data-add-block="blockquote">Quote</button>
+                            <button type="button" data-add-block="code">Code</button>
+                            <button type="button" data-add-block="image">Image</button>
+                        </div>
+                    </div>
+                    ${renderValidationError(errors, "content_blocks")}
+                </div>
+
+                <div class="form-grid-2">
                     <div>
                         <label for="create-status" class="form-group-label">Status</label>
                         <select name="status" id="create-status" class="form-input">
@@ -1013,6 +1109,17 @@ export function renderDashboardBlogsPage(options: {
                     <input type="text" name="subtitle" id="edit-subtitle" class="form-input">
                 </div>
 
+                <div class="form-grid-2">
+                    <div>
+                        <label for="edit-category" class="form-group-label">Category</label>
+                        <input type="text" name="category" id="edit-category" class="form-input">
+                    </div>
+                    <div>
+                        <label for="edit-tags" class="form-group-label">Tags</label>
+                        <input type="text" name="tags" id="edit-tags" class="form-input">
+                    </div>
+                </div>
+
                 <div>
                     <label for="edit-image" class="form-group-label">Cover Image (Optional)</label>
                     <div id="edit-image-preview" hidden>
@@ -1023,11 +1130,26 @@ export function renderDashboardBlogsPage(options: {
                 </div>
 
                 <div>
-                    <label for="edit-content" class="form-group-label">Content</label>
-                    <textarea name="content" id="edit-content" class="form-textarea" required rows="8"></textarea>
+                    <label for="edit-image-caption" class="form-group-label">Hero Image Caption</label>
+                    <input type="text" name="image_caption" id="edit-image-caption" class="form-input">
                 </div>
 
                 <div>
+                    <label class="form-group-label">Content Blocks</label>
+                    <input type="hidden" name="content_blocks" id="edit-content-blocks" value="${escapeAttribute(blogBlocksJson([{ type: "paragraph", value: "" }]))}">
+                    <div class="block-editor" data-block-editor data-target="edit-content-blocks">
+                        <div class="block-editor-list"></div>
+                        <div class="block-editor-actions">
+                            <button type="button" data-add-block="paragraph">Paragraph</button>
+                            <button type="button" data-add-block="heading">Heading</button>
+                            <button type="button" data-add-block="blockquote">Quote</button>
+                            <button type="button" data-add-block="code">Code</button>
+                            <button type="button" data-add-block="image">Image</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
                     <div>
                         <label for="edit-status" class="form-group-label">Status</label>
                         <select name="status" id="edit-status" class="form-input">

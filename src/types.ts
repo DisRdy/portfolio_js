@@ -74,13 +74,24 @@ export interface Comment {
   updatedAt: string | null;
 }
 
+export type BlogContentBlockType = "paragraph" | "heading" | "blockquote" | "code" | "image";
+
+export interface BlogContentBlock {
+  type: BlogContentBlockType;
+  value: string;
+  caption?: string;
+  language?: string;
+}
+
 export interface Blog {
   id: number;
   userId: number;
   title: string;
   subtitle: string | null;
   slug: string;
+  category: string | null;
   content: string;
+  contentBlocks: BlogContentBlock[];
   excerpt: string | null;
   thumbnail: string | null;
   metaTitle: string | null;
@@ -88,6 +99,8 @@ export interface Blog {
   status: "draft" | "published";
   publishedAt: string | null;
   image: string | null;
+  imageCaption: string | null;
+  tags: string[];
   createdAt: string | null;
   updatedAt: string | null;
 }

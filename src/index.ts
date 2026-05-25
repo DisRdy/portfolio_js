@@ -60,7 +60,7 @@ import {
   verifyCsrfToken,
 } from "./lib/session";
 import { ensureSchema } from "./lib/schema";
-import type { Blog, Env, FlashData, Project, SessionState, User } from "./types";
+import type { Blog, BlogContentBlock, BlogContentBlockType, Env, FlashData, Project, SessionState, User } from "./types";
 import {
   renderBlogIndexPage,
   renderBlogShowPage,
@@ -78,6 +78,7 @@ import {
 const PROJECT_CATEGORIES = ["design", "pdf", "cybersecurity", "tutorial", "certificate"] as const;
 const PUBLIC_PROJECT_FILTERS = ["design", "pdf", "cybersecurity", "tutorial", "certificate"] as const;
 const BLOG_STATUSES = ["draft", "published"] as const;
+const BLOG_BLOCK_TYPES = ["paragraph", "heading", "blockquote", "code", "image"] as const satisfies readonly BlogContentBlockType[];
 const MAX_FORM_BODY_BYTES = 12 * 1024 * 1024;
 
 class PayloadTooLargeError extends Error {}
@@ -125,7 +126,7 @@ function applySecurityHeaders(request: Request, response: Response): Response {
   if (contentType.includes("text/html")) {
     newResponse.headers.set(
       "Content-Security-Policy",
-      "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';",
+      "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';",
     );
   } else if (contentType.includes("image/svg+xml")) {
     newResponse.headers.set("Content-Security-Policy", "sandbox; default-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none';");
@@ -238,6 +239,70 @@ function validateDateTime(value: string, field: string, errors: Record<string, s
   }
 
   return normalized.replace("T", " ").replace("Z", "");
+}
+
+function parseTagsInput(value: string): string[] {
+  return value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function plainTextFromBlocks(blocks: BlogContentBlock[]): string {
+  return blocks
+    .map((block) => block.value.trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function validateBlogContentBlocks(value: string, errors: Record<string, string>): BlogContentBlock[] {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(value || "[]");
+  } catch {
+    errors.content_blocks = "The content blocks field must contain valid editor data.";
+    return [];
+  }
+
+  if (!Array.isArray(parsed)) {
+    errors.content_blocks = "The content blocks field must contain a list of blocks.";
+    return [];
+  }
+
+  const blocks = parsed.flatMap((item): BlogContentBlock[] => {
+    const candidate = item as Partial<BlogContentBlock>;
+    if (!candidate || !BLOG_BLOCK_TYPES.includes(candidate.type as BlogContentBlockType)) {
+      return [];
+    }
+
+    const valueText = String(candidate.value ?? "").trim();
+    if (!valueText) {
+      return [];
+    }
+
+    const block: BlogContentBlock = {
+      type: candidate.type as BlogContentBlockType,
+      value: valueText.slice(0, 12000),
+    };
+
+    if (candidate.caption) {
+      block.caption = String(candidate.caption).trim().slice(0, 255);
+    }
+
+    if (candidate.language) {
+      block.language = String(candidate.language).trim().slice(0, 40);
+    }
+
+    return [block];
+  }).slice(0, 60);
+
+  if (blocks.length === 0) {
+    errors.content_blocks = "Add at least one content block.";
+  }
+
+  return blocks;
 }
 
 function isImageFile(file: File): boolean {
@@ -560,13 +625,17 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
   const errors: Record<string, string> = {};
   const title = validateRequiredText(formString(formData, "title"), "title", errors, { max: 255 });
   const subtitle = validateOptionalText(formString(formData, "subtitle"), "subtitle", errors, { max: 255 });
+  const category = validateOptionalText(formString(formData, "category"), "category", errors, { max: 120 });
+  const tags = parseTagsInput(formString(formData, "tags"));
   const image = validateFile(formFile(formData, "image"), "image", errors, { required: false, maxKb: 2048, image: true });
-  const content = validateRequiredText(formString(formData, "content"), "content", errors);
+  const imageCaption = validateOptionalText(formString(formData, "image_caption"), "image_caption", errors, { max: 255 });
+  const contentBlocks = validateBlogContentBlocks(formString(formData, "content_blocks"), errors);
+  const content = plainTextFromBlocks(contentBlocks);
   const status = validateChoice(formString(formData, "status"), "status", BLOG_STATUSES, errors);
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
   if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, "/dashboard/blogs", errors, oldInputs(formData, ["title", "subtitle", "content", "status", "published_at"]));
+    return setValidationFlash(session, "/dashboard/blogs", errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
   }
 
   let slug = slugify(title);
@@ -584,9 +653,13 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
     userId: user.id,
     title,
     subtitle,
+    category,
+    tags,
     image: imagePath,
+    imageCaption,
     slug,
     content,
+    contentBlocks,
     status: status!,
     publishedAt: status === "published" ? (publishedAt ?? sqlNow()) : null,
   });
@@ -608,13 +681,17 @@ async function handleBlogUpdate(env: Env, formData: FormData | null, session: Se
   const errors: Record<string, string> = {};
   const title = validateRequiredText(formString(formData, "title"), "title", errors, { max: 255 });
   const subtitle = validateOptionalText(formString(formData, "subtitle"), "subtitle", errors, { max: 255 });
+  const category = validateOptionalText(formString(formData, "category"), "category", errors, { max: 120 });
+  const tags = parseTagsInput(formString(formData, "tags"));
   const image = validateFile(formFile(formData, "image"), "image", errors, { required: false, maxKb: 2048, image: true });
-  const content = validateRequiredText(formString(formData, "content"), "content", errors);
+  const imageCaption = validateOptionalText(formString(formData, "image_caption"), "image_caption", errors, { max: 255 });
+  const contentBlocks = validateBlogContentBlocks(formString(formData, "content_blocks"), errors);
+  const content = plainTextFromBlocks(contentBlocks);
   const status = validateChoice(formString(formData, "status"), "status", BLOG_STATUSES, errors);
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
   if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, "/dashboard/blogs", errors, oldInputs(formData, ["title", "subtitle", "content", "status", "published_at"]));
+    return setValidationFlash(session, "/dashboard/blogs", errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
   }
 
   if (image) {
@@ -627,7 +704,11 @@ async function handleBlogUpdate(env: Env, formData: FormData | null, session: Se
 
   blog.title = title;
   blog.subtitle = subtitle;
+  blog.category = category;
+  blog.tags = tags;
+  blog.imageCaption = imageCaption;
   blog.content = content;
+  blog.contentBlocks = contentBlocks;
   blog.status = status!;
   blog.publishedAt = status === "published" ? (publishedAt ?? blog.publishedAt ?? sqlNow()) : null;
 
