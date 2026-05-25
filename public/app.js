@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (element) element.hidden = true;
     };
 
-    const blockEditorInstances = new Map();
     const blockTypes = ['paragraph', 'heading', 'blockquote', 'code', 'image'];
 
     const defaultBlocks = function () {
@@ -127,14 +126,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        const instance = {
-            setFromJson: function (value) {
-                blocks = parseBlocks(value);
-                render();
-            },
-        };
-
-        blockEditorInstances.set(target.id, instance);
         render();
     });
 
@@ -207,66 +198,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // === BLOG MODALS ===
-    const createModal = document.getElementById('create-blog-modal');
-    const editModal = document.getElementById('edit-blog-modal');
-    const openCreateBtn = document.getElementById('open-create-modal');
-
-    // Open Create Modal
-    if (openCreateBtn && createModal) {
-        openCreateBtn.addEventListener('click', function () {
-            showElement(createModal);
-        });
-    }
-
     // Open Edit Modal — populate from data attributes
-    document.querySelectorAll('.open-edit-modal').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            if (!editModal) return;
-            const form = document.getElementById('edit-blog-form');
-            form.action = btn.dataset.updateUrl;
-            document.getElementById('edit-title').value = btn.dataset.title || '';
-            document.getElementById('edit-subtitle').value = btn.dataset.subtitle || '';
-            document.getElementById('edit-category').value = btn.dataset.category || '';
-            document.getElementById('edit-tags').value = btn.dataset.tags || '';
-            document.getElementById('edit-image-caption').value = btn.dataset.imageCaption || '';
-            const editBlocks = document.getElementById('edit-content-blocks');
-            if (editBlocks) {
-                editBlocks.value = btn.dataset.contentBlocks || '';
-                blockEditorInstances.get('edit-content-blocks')?.setFromJson(editBlocks.value);
-            }
-            document.getElementById('edit-status').value = btn.dataset.status || 'draft';
-            document.getElementById('edit-published_at').value = btn.dataset.publishedAt || '';
-
-            // Image preview
-            const preview = document.getElementById('edit-image-preview');
-            const img = document.getElementById('edit-image-img');
-            if (btn.dataset.image) {
-                img.src = '/storage/' + btn.dataset.image;
-                showElement(preview);
-            } else {
-                hideElement(preview);
-            }
-
-            showElement(editModal);
-        });
-    });
-
     // Close modals — generic handler for all .close-modal buttons
     document.querySelectorAll('.close-modal').forEach(function (btn) {
         btn.addEventListener('click', function () {
             const overlay = btn.closest('.modal-overlay');
             hideElement(overlay);
         });
-    });
-
-    // Close modals on overlay click
-    [createModal, editModal].forEach(function (m) {
-        if (m) {
-            m.addEventListener('click', function (e) {
-                if (e.target === m) hideElement(m);
-            });
-        }
     });
 
     // Close modals on ESC key

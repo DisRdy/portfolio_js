@@ -50,7 +50,7 @@ function publicNavbar(active: "home" | "projects" | "blog" | "comments"): string
 }
 
 function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: string): string {
-  const createHref = active === "blogs" ? "/dashboard/blogs" : "/dashboard/projects";
+  const createHref = active === "blogs" ? "/dashboard/blogs/create" : "/dashboard/projects";
 
   return `<aside class="admin-sidebar">
     <div class="admin-brand">
@@ -96,10 +96,6 @@ function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: 
         <span class="admin-env-value">Production</span>
     </div>
     <div class="admin-topbar-actions">
-        <a href="${createHref}" class="admin-create-link">
-            <span class="material-symbols-outlined">add</span>
-            <span>Create Entry</span>
-        </a>
         <span class="material-symbols-outlined admin-topbar-icon">notifications</span>
         <span class="material-symbols-outlined admin-topbar-icon">search</span>
     </div>
@@ -934,8 +930,6 @@ export function renderDashboardBlogsPage(options: {
   csrfToken: string;
 }): string {
   const { blogs, flash, csrfToken } = options;
-  const errors = flash.errors;
-  const old = baseOldValues(flash.old, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]);
 
   return htmlDocument(
     "Manage Blogs - Dashboard",
@@ -947,9 +941,9 @@ export function renderDashboardBlogsPage(options: {
             <div class="dashboard-header">
                 <div class="dashboard-title">
                     <h1>Manage Blogs</h1>
-                    <button type="button" class="btn" id="open-create-modal">
+                    <a href="/dashboard/blogs/create" class="btn">
                         + New Post
-                    </button>
+                    </a>
                 </div>
                 <hr class="divider">
             </div>
@@ -969,16 +963,9 @@ export function renderDashboardBlogsPage(options: {
                             </p>
 
                             <div class="project-item-actions">
-                                <button type="button" class="btn-edit open-edit-modal" data-id="${blog.id}"
-                                    data-title="${escapeAttribute(blog.title)}" data-subtitle="${escapeAttribute(blog.subtitle ?? "")}"
-                                    data-category="${escapeAttribute(blog.category ?? "")}" data-tags="${escapeAttribute(blogTagsInput(blog.tags))}"
-                                    data-image-caption="${escapeAttribute(blog.imageCaption ?? "")}"
-                                    data-content-blocks="${escapeAttribute(blogBlocksJson(blog.contentBlocks))}" data-status="${escapeAttribute(blog.status)}"
-                                    data-published-at="${escapeAttribute(blog.publishedAt ? blog.publishedAt.replace(" ", "T").slice(0, 16) : "")}"
-                                    data-image="${escapeAttribute(blog.image ?? "")}"
-                                    data-update-url="/dashboard/blogs/${blog.id}">
+                                <a href="/dashboard/blogs/${blog.id}/edit" class="btn-edit">
                                     Edit
-                                </button>
+                                </a>
                                 <form action="/dashboard/blogs/${blog.id}" method="POST" class="delete-form-trigger">
                                     <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
                                     <input type="hidden" name="_method" value="DELETE">
@@ -997,180 +984,6 @@ export function renderDashboardBlogsPage(options: {
         </div>
     </div>
 
-    <div id="create-blog-modal" class="modal-overlay" hidden>
-        <div class="modal-content modal-content-lg">
-            <div class="modal-header">
-                <h2>Create New Post</h2>
-                <button type="button" class="modal-close close-modal">&times;</button>
-            </div>
-
-            <form action="/dashboard/blogs" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
-
-                <div>
-                    <label for="create-title" class="form-group-label">Title</label>
-                    <input type="text" name="title" id="create-title" class="form-input" value="${escapeAttribute(oldValue(old, "title"))}"
-                        required>
-                    ${renderValidationError(errors, "title")}
-                </div>
-
-                <div>
-                    <label for="create-subtitle" class="form-group-label">Subtitle (Optional)</label>
-                    <input type="text" name="subtitle" id="create-subtitle" class="form-input"
-                        value="${escapeAttribute(oldValue(old, "subtitle"))}">
-                    ${renderValidationError(errors, "subtitle")}
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label for="create-category" class="form-group-label">Category</label>
-                        <input type="text" name="category" id="create-category" class="form-input"
-                            placeholder="System Architecture" value="${escapeAttribute(oldValue(old, "category"))}">
-                        ${renderValidationError(errors, "category")}
-                    </div>
-                    <div>
-                        <label for="create-tags" class="form-group-label">Tags</label>
-                        <input type="text" name="tags" id="create-tags" class="form-input"
-                            placeholder="Architecture, Systems" value="${escapeAttribute(oldValue(old, "tags"))}">
-                    </div>
-                </div>
-
-                <div>
-                    <label for="create-image" class="form-group-label">Cover Image (Optional)</label>
-                    <input type="file" name="image" id="create-image" class="form-input" accept="image/*">
-                    ${renderValidationError(errors, "image")}
-                </div>
-
-                <div>
-                    <label for="create-image-caption" class="form-group-label">Hero Image Caption</label>
-                    <input type="text" name="image_caption" id="create-image-caption" class="form-input"
-                        placeholder="Fig 1: The geometry of architectural debt." value="${escapeAttribute(oldValue(old, "image_caption"))}">
-                    ${renderValidationError(errors, "image_caption")}
-                </div>
-
-                <div>
-                    <label class="form-group-label">Content Blocks</label>
-                    <input type="hidden" name="content_blocks" id="create-content-blocks"
-                        value="${escapeAttribute(oldValue(old, "content_blocks") || blogBlocksJson([{ type: "paragraph", value: "" }]))}">
-                    <div class="block-editor" data-block-editor data-target="create-content-blocks">
-                        <div class="block-editor-list"></div>
-                        <div class="block-editor-actions">
-                            <button type="button" data-add-block="paragraph">Paragraph</button>
-                            <button type="button" data-add-block="heading">Heading</button>
-                            <button type="button" data-add-block="blockquote">Quote</button>
-                            <button type="button" data-add-block="code">Code</button>
-                            <button type="button" data-add-block="image">Image</button>
-                        </div>
-                    </div>
-                    ${renderValidationError(errors, "content_blocks")}
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label for="create-status" class="form-group-label">Status</label>
-                        <select name="status" id="create-status" class="form-input">
-                            <option value="draft" ${selectedValue(old, "status", "draft")}>Draft</option>
-                            <option value="published" ${selectedValue(old, "status", "published")}>Published</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="create-published_at" class="form-group-label">Published At</label>
-                        <input type="datetime-local" name="published_at" id="create-published_at" class="form-input"
-                            value="${escapeAttribute(oldValue(old, "published_at"))}">
-                    </div>
-                </div>
-
-                <div>
-                    <button type="button" class="btn-secondary close-modal">Cancel</button>
-                    <button type="submit" class="btn">Create Post</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="edit-blog-modal" class="modal-overlay" hidden>
-        <div class="modal-content modal-content-lg">
-            <div class="modal-header">
-                <h2>Edit Post</h2>
-                <button type="button" class="modal-close close-modal">&times;</button>
-            </div>
-
-            <form id="edit-blog-form" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
-                <input type="hidden" name="_method" value="PUT">
-
-                <div>
-                    <label for="edit-title" class="form-group-label">Title</label>
-                    <input type="text" name="title" id="edit-title" class="form-input" required>
-                </div>
-
-                <div>
-                    <label for="edit-subtitle" class="form-group-label">Subtitle (Optional)</label>
-                    <input type="text" name="subtitle" id="edit-subtitle" class="form-input">
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label for="edit-category" class="form-group-label">Category</label>
-                        <input type="text" name="category" id="edit-category" class="form-input">
-                    </div>
-                    <div>
-                        <label for="edit-tags" class="form-group-label">Tags</label>
-                        <input type="text" name="tags" id="edit-tags" class="form-input">
-                    </div>
-                </div>
-
-                <div>
-                    <label for="edit-image" class="form-group-label">Cover Image (Optional)</label>
-                    <div id="edit-image-preview" hidden>
-                        <img id="edit-image-img" src="" alt="Current Image">
-                    </div>
-                    <input type="file" name="image" id="edit-image" class="form-input" accept="image/*">
-                    <small class="form-help-text">Leave blank to keep current image</small>
-                </div>
-
-                <div>
-                    <label for="edit-image-caption" class="form-group-label">Hero Image Caption</label>
-                    <input type="text" name="image_caption" id="edit-image-caption" class="form-input">
-                </div>
-
-                <div>
-                    <label class="form-group-label">Content Blocks</label>
-                    <input type="hidden" name="content_blocks" id="edit-content-blocks" value="${escapeAttribute(blogBlocksJson([{ type: "paragraph", value: "" }]))}">
-                    <div class="block-editor" data-block-editor data-target="edit-content-blocks">
-                        <div class="block-editor-list"></div>
-                        <div class="block-editor-actions">
-                            <button type="button" data-add-block="paragraph">Paragraph</button>
-                            <button type="button" data-add-block="heading">Heading</button>
-                            <button type="button" data-add-block="blockquote">Quote</button>
-                            <button type="button" data-add-block="code">Code</button>
-                            <button type="button" data-add-block="image">Image</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label for="edit-status" class="form-group-label">Status</label>
-                        <select name="status" id="edit-status" class="form-input">
-                            <option value="draft">Draft</option>
-                            <option value="published">Published</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="edit-published_at" class="form-group-label">Published At</label>
-                        <input type="datetime-local" name="published_at" id="edit-published_at" class="form-input">
-                    </div>
-                </div>
-
-                <div>
-                    <button type="button" class="btn-secondary close-modal">Cancel</button>
-                    <button type="submit" class="btn">Update Post</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <div id="confirmation-modal" class="modal-overlay" hidden>
         <div class="modal-content">
             <div class="modal-header">
@@ -1185,6 +998,153 @@ export function renderDashboardBlogsPage(options: {
                     <button type="submit" class="btn-delete">Ya, Hapus</button>
                 </form>
             </div>
+        </div>
+    </div>`,
+    "admin-page",
+  );
+}
+
+export function renderDashboardBlogFormPage(options: {
+  blog?: Blog;
+  csrfToken: string;
+  flash: FlashData;
+  mode: "create" | "edit";
+}): string {
+  const { blog, csrfToken, flash, mode } = options;
+  const errors = flash.errors;
+  const old = baseOldValues(flash.old, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]);
+  const isEdit = mode === "edit" && blog;
+  const title = isEdit ? "Edit Blog" : "Create Blog";
+  const action = isEdit ? `/dashboard/blogs/${blog.id}` : "/dashboard/blogs";
+  const hasOld = (key: string): boolean => Object.prototype.hasOwnProperty.call(old, key);
+  const oldOr = (key: string, fallback: string): string => hasOld(key) ? oldValue(old, key) : fallback;
+  const titleValue = oldOr("title", blog?.title || "");
+  const subtitleValue = oldOr("subtitle", blog?.subtitle || "");
+  const categoryValue = oldOr("category", blog?.category || "");
+  const tagsValue = oldOr("tags", blog ? blogTagsInput(blog.tags) : "");
+  const imageCaptionValue = oldOr("image_caption", blog?.imageCaption || "");
+  const contentBlocksValue = oldOr("content_blocks", blog ? blogBlocksJson(blog.contentBlocks) : blogBlocksJson([{ type: "paragraph", value: "" }]));
+  const statusValue = oldOr("status", blog?.status || "draft");
+  const publishedAtValue = oldOr("published_at", blog?.publishedAt ? blog.publishedAt.replace(" ", "T").slice(0, 16) : "");
+
+  return htmlDocument(
+    `${title} - Dashboard`,
+    `${dashboardNavbar("blogs", csrfToken)}
+    ${renderToast(flash)}
+
+    <div class="dashboard-wrapper">
+        <div class="container blog-form-page">
+            <div class="dashboard-header">
+                <div class="dashboard-title">
+                    <div>
+                        <h1>${title}</h1>
+                        <p>Compose the article as structured content blocks.</p>
+                    </div>
+                    <a href="/dashboard/blogs" class="btn-secondary">
+                        &larr; Back to Blogs
+                    </a>
+                </div>
+                <hr class="divider">
+            </div>
+
+            <form class="blog-editor-form" action="${action}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
+                ${isEdit ? `<input type="hidden" name="_method" value="PUT">` : ""}
+
+                <section class="blog-form-section">
+                    <h2>Article Header</h2>
+
+                    <div>
+                        <label for="blog-title" class="form-group-label">Title</label>
+                        <input type="text" name="title" id="blog-title" class="form-input" value="${escapeAttribute(titleValue)}" required>
+                        ${renderValidationError(errors, "title")}
+                    </div>
+
+                    <div>
+                        <label for="blog-subtitle" class="form-group-label">Subtitle (Optional)</label>
+                        <input type="text" name="subtitle" id="blog-subtitle" class="form-input" value="${escapeAttribute(subtitleValue)}">
+                        ${renderValidationError(errors, "subtitle")}
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div>
+                            <label for="blog-category" class="form-group-label">Category</label>
+                            <input type="text" name="category" id="blog-category" class="form-input"
+                                placeholder="System Architecture" value="${escapeAttribute(categoryValue)}">
+                            ${renderValidationError(errors, "category")}
+                        </div>
+                        <div>
+                            <label for="blog-tags" class="form-group-label">Tags</label>
+                            <input type="text" name="tags" id="blog-tags" class="form-input"
+                                placeholder="Architecture, Systems" value="${escapeAttribute(tagsValue)}">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="blog-form-section">
+                    <h2>Hero Image</h2>
+
+                    ${isEdit && blog.image ? `<figure class="current-blog-image">
+                        <img src="${escapeAttribute(storageUrl(blog.image))}" alt="${escapeAttribute(blog.title)}">
+                        <figcaption>Current hero image</figcaption>
+                    </figure>` : ""}
+
+                    <div>
+                        <label for="blog-image" class="form-group-label">Cover Image ${isEdit ? "(Optional)" : "(Optional)"}</label>
+                        <input type="file" name="image" id="blog-image" class="form-input" accept="image/*">
+                        ${isEdit ? `<small class="form-help-text">Leave blank to keep current image</small>` : ""}
+                        ${renderValidationError(errors, "image")}
+                    </div>
+
+                    <div>
+                        <label for="blog-image-caption" class="form-group-label">Hero Image Caption</label>
+                        <input type="text" name="image_caption" id="blog-image-caption" class="form-input"
+                            placeholder="Fig 1: The geometry of architectural debt." value="${escapeAttribute(imageCaptionValue)}">
+                        ${renderValidationError(errors, "image_caption")}
+                    </div>
+                </section>
+
+                <section class="blog-form-section">
+                    <h2>Content Blocks</h2>
+
+                    <input type="hidden" name="content_blocks" id="blog-content-blocks" value="${escapeAttribute(contentBlocksValue)}">
+                    <div class="block-editor" data-block-editor data-target="blog-content-blocks">
+                        <div class="block-editor-list"></div>
+                        <div class="block-editor-actions">
+                            <button type="button" data-add-block="paragraph">Paragraph</button>
+                            <button type="button" data-add-block="heading">Heading</button>
+                            <button type="button" data-add-block="blockquote">Quote</button>
+                            <button type="button" data-add-block="code">Code</button>
+                            <button type="button" data-add-block="image">Image</button>
+                        </div>
+                    </div>
+                    ${renderValidationError(errors, "content_blocks")}
+                </section>
+
+                <section class="blog-form-section">
+                    <h2>Publishing</h2>
+
+                    <div class="form-grid-2">
+                        <div>
+                            <label for="blog-status" class="form-group-label">Status</label>
+                            <select name="status" id="blog-status" class="form-input">
+                                <option value="draft" ${statusValue === "draft" ? "selected" : ""}>Draft</option>
+                                <option value="published" ${statusValue === "published" ? "selected" : ""}>Published</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="blog-published-at" class="form-group-label">Published At</label>
+                            <input type="datetime-local" name="published_at" id="blog-published-at" class="form-input"
+                                value="${escapeAttribute(publishedAtValue)}">
+                        </div>
+                    </div>
+                </section>
+
+                <div class="blog-form-actions">
+                    <a href="/dashboard/blogs" class="btn-secondary">Cancel</a>
+                    <button type="submit" class="btn">${isEdit ? "Update Blog" : "Create Blog"}</button>
+                </div>
+            </form>
         </div>
     </div>`,
     "admin-page",

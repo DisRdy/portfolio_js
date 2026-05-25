@@ -65,6 +65,7 @@ import {
   renderBlogIndexPage,
   renderBlogShowPage,
   renderCommentsPage,
+  renderDashboardBlogFormPage,
   renderDashboardBlogsPage,
   renderDashboardPage,
   renderDashboardProjectsPage,
@@ -635,7 +636,7 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
   if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, "/dashboard/blogs", errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
+    return setValidationFlash(session, "/dashboard/blogs/create", errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
   }
 
   let slug = slugify(title);
@@ -691,7 +692,7 @@ async function handleBlogUpdate(env: Env, formData: FormData | null, session: Se
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
   if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, "/dashboard/blogs", errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
+    return setValidationFlash(session, `/dashboard/blogs/${blog.id}/edit`, errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
   }
 
   if (image) {
@@ -862,7 +863,11 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
     if (authRedirect) {
       return authRedirect;
     }
-    return redirect("/dashboard/blogs");
+    return html(renderDashboardBlogFormPage({
+      csrfToken: session.payload.csrfToken,
+      flash,
+      mode: "create",
+    }));
   }
 
   if (method === "POST" && path === "/dashboard/blogs") {
@@ -886,7 +891,12 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
     if (blog.userId !== user!.id) {
       return forbidden();
     }
-    return redirect("/dashboard/blogs");
+    return html(renderDashboardBlogFormPage({
+      blog,
+      csrfToken: session.payload.csrfToken,
+      flash,
+      mode: "edit",
+    }));
   }
 
   const blogMatch = path.match(/^\/dashboard\/blogs\/(\d+)$/);
