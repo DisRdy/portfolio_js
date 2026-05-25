@@ -185,7 +185,6 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
         <span class="home-card-external material-symbols-outlined">open_in_new</span>
         <span class="home-project-icon material-symbols-outlined">rocket_launch</span>
         <strong>${escapeHtml(project.title)}</strong>
-        <small>${escapeHtml(projectCategoryLabel(project.category))}</small>
         <em>${escapeHtml(project.originalFilename)} &middot; ${escapeHtml(formatKilobytes(project.fileSize))} KB</em>
     </a>`).join("") : `<p class="home-empty">Belum ada project terbaru.</p>`;
 
