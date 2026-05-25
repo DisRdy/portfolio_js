@@ -511,7 +511,7 @@ export function renderDashboardPage(summary: DashboardSummary, csrfToken: string
                 ${summary.recentBlogs.length === 0 ? `<p class="empty-text">No blog posts yet.</p>` : `<div class="project-list">
                     ${summary.recentBlogs.map((blog) => `<div class="project-item">
                             <div class="project-item-info">
-                                <div style="display: flex; align-items: center; gap: 10px;">
+                                <div>
                                     <h5>${escapeHtml(blog.title)}</h5>
                                     <span class="badge ${blog.status === "published" ? "badge-success" : "badge-warning"}">
                                         ${escapeHtml(blog.status.charAt(0).toUpperCase() + blog.status.slice(1))}
@@ -557,7 +557,7 @@ export function renderDashboardProjectsPage(options: {
             <div class="dashboard-header">
                 <div class="dashboard-title">
                     <h1>Manage Projects</h1>
-                    <button type="button" class="btn" style="margin-left: auto; width: auto;" id="open-create-project-modal">
+                    <button type="button" class="btn" id="open-create-project-modal">
                         + New Project
                     </button>
                 </div>
@@ -610,13 +610,13 @@ export function renderDashboardProjectsPage(options: {
                         </div>`;
     }).join("")}
 
-            <a href="/dashboard" class="btn-secondary" style="margin-top: 2rem;">
+            <a href="/dashboard" class="btn-secondary">
                 &larr; Back to Dashboard
             </a>
         </div>
     </div>
 
-    <div id="create-project-modal" class="modal-overlay" style="display: none;">
+    <div id="create-project-modal" class="modal-overlay" hidden>
         <div class="modal-content modal-content-lg">
             <div class="modal-header">
                 <h2>Upload Project Baru</h2>
@@ -659,7 +659,7 @@ export function renderDashboardProjectsPage(options: {
                     ${renderValidationError(errors, "file")}
                 </div>
 
-                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <div>
                     <button type="button" class="btn-secondary close-modal">Batal</button>
                     <button type="submit" class="btn">Upload Project</button>
                 </div>
@@ -667,7 +667,7 @@ export function renderDashboardProjectsPage(options: {
         </div>
     </div>
 
-    <div id="edit-project-modal" class="modal-overlay" style="display: none;">
+    <div id="edit-project-modal" class="modal-overlay" hidden>
         <div class="modal-content modal-content-lg">
             <div class="modal-header">
                 <h2>Edit Project</h2>
@@ -701,7 +701,7 @@ export function renderDashboardProjectsPage(options: {
 
                 <div>
                     <label class="form-group-label">File Saat Ini</label>
-                    <p id="edit-project-current-file" style="color: var(--text-muted); font-size: 0.85rem;"></p>
+                    <p id="edit-project-current-file"></p>
                 </div>
 
                 <div>
@@ -710,7 +710,7 @@ export function renderDashboardProjectsPage(options: {
                     <small class="form-help-text">Kosongkan jika tidak ingin mengganti file</small>
                 </div>
 
-                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <div>
                     <button type="button" class="btn-secondary close-modal">Batal</button>
                     <button type="submit" class="btn">Simpan</button>
                 </div>
@@ -718,13 +718,13 @@ export function renderDashboardProjectsPage(options: {
         </div>
     </div>
 
-    <div id="confirmation-modal" class="modal-overlay">
+    <div id="confirmation-modal" class="modal-overlay" hidden>
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Konfirmasi Hapus</h2>
             </div>
             <p>Apakah Anda yakin ingin menghapus project ini?</p>
-            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+            <div>
                 <button id="cancel-delete" class="btn-secondary">Batal</button>
                 <form id="delete-form-confirm" method="POST">
                     <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
@@ -747,7 +747,7 @@ export function renderBlogIndexPage(blogs: Blog[]): string {
 
     <div class="container">
         <section>
-            <h2 style="margin-bottom: 2rem;">Latest Posts</h2>
+            <h2>Latest Posts</h2>
 
             ${blogs.length === 0 ? `<div class="alert alert-info">
                 <p>No posts published yet. Check back later!</p>
@@ -779,9 +779,8 @@ export function renderBlogShowPage(blog: Blog): string {
             <header class="blog-header">
                 <h1 class="article-title">${escapeHtml(blog.title)}</h1>
                 ${blog.subtitle ? `<p class="article-subtitle">${escapeHtml(blog.subtitle)}</p>
-                    ${blog.image ? `<div class="article-image-container" style="margin-bottom: 2rem;">
-                            <img src="${escapeAttribute(storageUrl(blog.image))}" alt="${escapeAttribute(blog.title)}" class="article-image"
-                                style="width: 100%; max-height: 400px; object-fit: cover; border-radius: var(--radius-lg); border: 1px solid var(--glass-border);">
+                    ${blog.image ? `<div class="article-image-container">
+                            <img src="${escapeAttribute(storageUrl(blog.image))}" alt="${escapeAttribute(blog.title)}" class="article-image">
                         </div>` : ""}` : ""}
                 <div class="article-meta">
                     <span>Published on ${escapeHtml(formatDateBlog(blog.publishedAt))}</span>
@@ -822,7 +821,7 @@ export function renderDashboardBlogsPage(options: {
             <div class="dashboard-header">
                 <div class="dashboard-title">
                     <h1>Manage Blogs</h1>
-                    <button type="button" class="btn" style="margin-left: auto; width: auto;" id="open-create-modal">
+                    <button type="button" class="btn" id="open-create-modal">
                         + New Post
                     </button>
                 </div>
@@ -832,7 +831,7 @@ export function renderDashboardBlogsPage(options: {
             <div class="project-list">
                 ${blogs.length > 0 ? blogs.map((blog) => `<div class="project-item">
                         <div class="project-item-info">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem;">
+                            <div>
                                 <h5>${escapeHtml(blog.title)}</h5>
                                 <span class="badge ${blog.status === "published" ? "badge-success" : "badge-warning"}">
                                     ${escapeHtml(blog.status.charAt(0).toUpperCase() + blog.status.slice(1))}
@@ -864,13 +863,13 @@ export function renderDashboardBlogsPage(options: {
                 </div>`}
             </div>
 
-            <a href="/dashboard" class="btn-secondary" style="margin-top: 2rem;">
+            <a href="/dashboard" class="btn-secondary">
                 &larr; Back to Dashboard
             </a>
         </div>
     </div>
 
-    <div id="create-blog-modal" class="modal-overlay" style="display: none;">
+    <div id="create-blog-modal" class="modal-overlay" hidden>
         <div class="modal-content modal-content-lg">
             <div class="modal-header">
                 <h2>Create New Post</h2>
@@ -907,7 +906,7 @@ export function renderDashboardBlogsPage(options: {
                     ${renderValidationError(errors, "content")}
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
                     <div>
                         <label for="create-status" class="form-group-label">Status</label>
                         <select name="status" id="create-status" class="form-input">
@@ -922,7 +921,7 @@ export function renderDashboardBlogsPage(options: {
                     </div>
                 </div>
 
-                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <div>
                     <button type="button" class="btn-secondary close-modal">Cancel</button>
                     <button type="submit" class="btn">Create Post</button>
                 </div>
@@ -930,7 +929,7 @@ export function renderDashboardBlogsPage(options: {
         </div>
     </div>
 
-    <div id="edit-blog-modal" class="modal-overlay" style="display: none;">
+    <div id="edit-blog-modal" class="modal-overlay" hidden>
         <div class="modal-content modal-content-lg">
             <div class="modal-header">
                 <h2>Edit Post</h2>
@@ -953,9 +952,8 @@ export function renderDashboardBlogsPage(options: {
 
                 <div>
                     <label for="edit-image" class="form-group-label">Cover Image (Optional)</label>
-                    <div id="edit-image-preview" style="margin-bottom: 0.5rem; display: none;">
-                        <img id="edit-image-img" src="" alt="Current Image"
-                            style="max-width: 200px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                    <div id="edit-image-preview" hidden>
+                        <img id="edit-image-img" src="" alt="Current Image">
                     </div>
                     <input type="file" name="image" id="edit-image" class="form-input" accept="image/*">
                     <small class="form-help-text">Leave blank to keep current image</small>
@@ -966,7 +964,7 @@ export function renderDashboardBlogsPage(options: {
                     <textarea name="content" id="edit-content" class="form-textarea" required rows="8"></textarea>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
                     <div>
                         <label for="edit-status" class="form-group-label">Status</label>
                         <select name="status" id="edit-status" class="form-input">
@@ -980,7 +978,7 @@ export function renderDashboardBlogsPage(options: {
                     </div>
                 </div>
 
-                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <div>
                     <button type="button" class="btn-secondary close-modal">Cancel</button>
                     <button type="submit" class="btn">Update Post</button>
                 </div>
@@ -988,13 +986,13 @@ export function renderDashboardBlogsPage(options: {
         </div>
     </div>
 
-    <div id="confirmation-modal" class="modal-overlay">
+    <div id="confirmation-modal" class="modal-overlay" hidden>
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Konfirmasi Hapus</h2>
             </div>
             <p>Apakah Anda yakin ingin menghapus blog ini?</p>
-            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+            <div>
                 <button id="cancel-delete" class="btn-secondary">Batal</button>
                 <form id="delete-form-confirm" method="POST">
                     <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">

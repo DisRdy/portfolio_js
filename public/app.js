@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const showElement = function (element) {
+        if (element) element.hidden = false;
+    };
+
+    const hideElement = function (element) {
+        if (element) element.hidden = true;
+    };
+
     // === NAVBAR TOGGLE ===
     const navToggle = document.getElementById('navToggle');
     const navMenu = document.getElementById('navMenu');
@@ -50,20 +58,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 e.preventDefault();
                 // Set action of the confirmation form to match the triggered form
                 confirmForm.action = this.action;
-                modal.style.display = 'flex';
+                showElement(modal);
             });
         });
 
         if (cancelBtn) {
             cancelBtn.addEventListener('click', function () {
-                modal.style.display = 'none';
+                hideElement(modal);
             });
         }
 
         // Close when clicking outside
         modal.addEventListener('click', function (e) {
             if (e.target === modal) {
-                modal.style.display = 'none';
+                hideElement(modal);
             }
         });
     }
@@ -76,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Open Create Modal
     if (openCreateBtn && createModal) {
         openCreateBtn.addEventListener('click', function () {
-            createModal.style.display = 'flex';
+            showElement(createModal);
         });
     }
 
@@ -97,12 +105,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const img = document.getElementById('edit-image-img');
             if (btn.dataset.image) {
                 img.src = '/storage/' + btn.dataset.image;
-                preview.style.display = 'block';
+                showElement(preview);
             } else {
-                preview.style.display = 'none';
+                hideElement(preview);
             }
 
-            editModal.style.display = 'flex';
+            showElement(editModal);
         });
     });
 
@@ -110,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.close-modal').forEach(function (btn) {
         btn.addEventListener('click', function () {
             const overlay = btn.closest('.modal-overlay');
-            if (overlay) overlay.style.display = 'none';
+            hideElement(overlay);
         });
     });
 
@@ -118,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
     [createModal, editModal].forEach(function (m) {
         if (m) {
             m.addEventListener('click', function (e) {
-                if (e.target === m) m.style.display = 'none';
+                if (e.target === m) hideElement(m);
             });
         }
     });
@@ -127,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal-overlay').forEach(function (m) {
-                if (m && m.style.display === 'flex') m.style.display = 'none';
+                if (m && !m.hidden) hideElement(m);
             });
         }
     });
@@ -140,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Open Create Project Modal
     if (openCreateProjectBtn && createProjectModal) {
         openCreateProjectBtn.addEventListener('click', function () {
-            createProjectModal.style.display = 'flex';
+            showElement(createProjectModal);
         });
     }
 
@@ -156,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('edit-project-current-file').textContent =
                 (btn.dataset.filename || '') + ' (' + (btn.dataset.filesize || '') + ' KB)';
 
-            editProjectModal.style.display = 'flex';
+            showElement(editProjectModal);
         });
     });
 
@@ -164,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
     [createProjectModal, editProjectModal].forEach(function (m) {
         if (m) {
             m.addEventListener('click', function (e) {
-                if (e.target === m) m.style.display = 'none';
+                if (e.target === m) hideElement(m);
             });
         }
     });
