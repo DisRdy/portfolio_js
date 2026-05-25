@@ -911,29 +911,37 @@ export function renderDashboardProjectsPage(options: {
 }
 
 export function renderBlogIndexPage(blogs: Blog[]): string {
+  const blogCards = blogs.length > 0 ? blogs.map((blog) => `<a href="/blog/${encodeURIComponent(blog.slug)}" class="blog-index-card">
+        <span class="blog-card-external material-symbols-outlined">open_in_new</span>
+        <span class="blog-chip">${escapeHtml(blogCategoryLabel(blog))}</span>
+        <h2>${escapeHtml(blog.title)}</h2>
+        <p>${escapeHtml(blog.excerpt || blog.subtitle || truncate(blog.content, 140))}</p>
+        <time datetime="${escapeAttribute(blog.publishedAt ?? "")}">${escapeHtml(formatDateBlog(blog.publishedAt))}</time>
+    </a>`).join("") : `<div class="blog-index-empty">
+        <p>No posts published yet. Check back later!</p>
+    </div>`;
+
   return htmlDocument(
     "Blog - Dr",
     `${publicNavbar("blog")}
 
     <main class="blog-shell blog-index-shell">
-        <section class="blog-index-hero">
-            <p>Writing</p>
-            <h1>Architectural notes, systems thinking, and field reports.</h1>
-        </section>
+        <header class="blog-index-hero">
+            <span>Writing</span>
+            <h1>Blog</h1>
+            <p>Catatan tentang sistem, data, proses belajar, dan hal-hal teknis yang sedang saya rapikan.</p>
+        </header>
 
-        <section class="blog-index-list">
-            ${blogs.length === 0 ? `<div class="alert alert-info">
-                <p>No posts published yet. Check back later!</p>
-            </div>` : blogs.map((blog) => `<article class="blog-index-card">
-                            <a href="/blog/${encodeURIComponent(blog.slug)}" class="blog-link">
-                                <span>${escapeHtml(blogCategoryLabel(blog))}</span>
-                                <h2>${escapeHtml(blog.title)}</h2>
-                            </a>
-                            ${blog.subtitle ? `<p class="blog-subtitle">${escapeHtml(blog.subtitle)}</p>` : ""}
-                            <small class="blog-date">
-                                ${escapeHtml(formatDateBlog(blog.publishedAt))}
-                            </small>
-                    </article>`).join("")}
+        <section class="blog-index-panel">
+            <div class="blog-index-panel-header">
+                <div>
+                    <span class="material-symbols-outlined">article</span>
+                    <strong>Blog Index</strong>
+                </div>
+                <em>${blogs.length} article${blogs.length === 1 ? "" : "s"}</em>
+            </div>
+
+            <div class="blog-index-grid">${blogCards}</div>
         </section>
     </main>
 

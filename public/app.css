@@ -2081,14 +2081,14 @@ body.blog-page {
 }
 
 .blog-index-shell {
-    width: min(100% - 48px, 820px);
+    width: min(100% - 48px, 920px);
 }
 
 .blog-index-hero {
-    margin-bottom: 48px;
+    margin-bottom: 34px;
 }
 
-.blog-index-hero p,
+.blog-index-hero > span,
 .article-kicker span,
 .article-kicker time,
 .article-back-link {
@@ -2100,55 +2100,159 @@ body.blog-page {
     text-transform: uppercase;
 }
 
+.blog-index-hero p {
+    width: min(100%, 640px);
+    margin: 18px 0 0;
+    color: #c6c6c6;
+    font-size: 15px;
+    line-height: 1.8;
+}
+
 .blog-index-hero h1 {
     width: min(100%, 720px);
     margin: 12px 0 0;
     color: #ffffff;
-    font-size: 48px;
-    line-height: 0.98;
+    font-size: 64px;
+    line-height: 0.94;
     font-weight: 900;
-    letter-spacing: -0.075em;
+    letter-spacing: 0;
 }
 
-.blog-index-list {
-    display: grid;
+.blog-index-panel {
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    background: #1c1b1b;
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.32);
+    padding: 24px;
+}
+
+.blog-index-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 18px;
+    margin-bottom: 24px;
 }
 
-.blog-index-card {
-    border-top: 1px solid #2b2d30;
-    padding: 24px 0;
+.blog-index-panel-header div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.blog-index-card span {
-    color: #9cc4ff;
+.blog-index-panel-header .material-symbols-outlined {
+    color: #60a5fa;
+    font-size: 22px;
+}
+
+.blog-index-panel-header strong {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.blog-index-panel-header em {
+    color: #8f96a3;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 10px;
     font-weight: 900;
-    letter-spacing: 0.16em;
+    font-style: normal;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
-.blog-index-card h2 {
-    margin: 9px 0 0;
-    color: #ffffff;
-    font-size: 30px;
-    line-height: 1.05;
+.blog-index-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.blog-index-card {
+    position: relative;
+    min-height: 228px;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    background: #201f1f;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.blog-index-card:hover {
+    border-color: rgba(96, 165, 250, 0.42);
+    background: #242425;
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.blog-card-external {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    color: #8f96a3;
+    font-size: 18px;
+}
+
+.blog-chip {
+    max-width: calc(100% - 26px);
+    border-radius: 999px;
+    background: rgba(96, 165, 250, 0.12);
+    color: #adc6ff;
+    padding: 6px 9px;
+    font-size: 10px;
+    line-height: 1;
     font-weight: 900;
-    letter-spacing: -0.055em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
 }
 
-.blog-subtitle {
-    width: min(100%, 620px);
-    color: #aeb4bf;
-    font-size: 14px;
-    line-height: 1.7;
+.blog-index-card h2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin: 0 0 12px;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 900;
+    letter-spacing: 0;
 }
 
-.blog-date {
-    color: #7f8794;
+.blog-index-card p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    margin: 0 0 18px;
+    color: #c6c6c6;
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.blog-index-card time {
+    margin-top: auto;
+    color: #8f96a3;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 10px;
+}
+
+.blog-index-empty {
+    grid-column: 1 / -1;
+    border: 1px dashed #33363a;
+    border-radius: 12px;
+    background: #171717;
+    color: #c6c6c6;
+    padding: 24px;
+}
+
+.blog-index-empty p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
 }
 
 .article-back-link {
@@ -2181,7 +2285,7 @@ body.blog-page {
     font-size: 52px;
     line-height: 0.96;
     font-weight: 900;
-    letter-spacing: -0.08em;
+    letter-spacing: 0;
 }
 
 .article-subtitle {
@@ -2238,7 +2342,7 @@ body.blog-page {
     font-size: 24px;
     line-height: 1.15;
     font-weight: 800;
-    letter-spacing: -0.045em;
+    letter-spacing: 0;
 }
 
 .article-quote {
