@@ -275,7 +275,10 @@ export function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-export function htmlDocument(title: string, body: string): string {
+export function htmlDocument(title: string, body: string, bodyClass = ""): string {
+  const bodyClassAttribute = bodyClass ? ` class="${escapeAttribute(bodyClass)}"` : "";
+  const stylesheetLink = bodyClass === "admin-page" ? `    <link rel="stylesheet" href="/app.css">\n` : "";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -283,8 +286,9 @@ export function htmlDocument(title: string, body: string): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
     <link rel="icon" href="/img/LOGODR.png" type="image/png">
+${stylesheetLink}
 </head>
-<body>
+<body${bodyClassAttribute}>
 ${body}
 <script src="/app.js"></script>
 </body>

@@ -50,40 +50,60 @@ function publicNavbar(active: "home" | "projects" | "blog" | "comments"): string
 }
 
 function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: string): string {
-  return `<nav class="kof-navbar dashboard-navbar">
-    <div class="navbar-container">
-        <div class="navbar-brand">
-            <a href="/dashboard" class="brand-link">
-                <span class="brand-text">Dr</span>
-            </a>
-        </div>
+  const createHref = active === "blogs" ? "/dashboard/blogs" : "/dashboard/projects";
 
-        <button class="navbar-toggle" id="navToggle" aria-label="Toggle Navigation">
-            <span class="toggle-line"></span>
-            <span class="toggle-line"></span>
-            <span class="toggle-line"></span>
-        </button>
+  return `<aside class="admin-sidebar">
+    <div class="admin-brand">
+        <a href="/dashboard">Admin</a>
+        <span>Precision Control</span>
+    </div>
 
-        <div class="navbar-menu" id="navMenu">
-            <a href="/dashboard" class="nav-link ${active === "dashboard" ? "active" : ""}">
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="/dashboard/projects" class="nav-link ${active === "projects" ? "active" : ""}">
-                <span class="nav-text">Projects</span>
-            </a>
-            <a href="/dashboard/blogs" class="nav-link ${active === "blogs" ? "active" : ""}">
-                <span class="nav-text">Blogs</span>
-            </a>
-            <form method="POST" action="/logout" class="nav-link-form">
-                <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
-                <button type="submit" class="nav-link btn-logout-nav">
-                    <span class="nav-text">Logout</span>
-                </button>
-            </form>
+    <nav class="admin-nav" aria-label="Dashboard navigation">
+        <a href="/dashboard" class="admin-nav-link ${active === "dashboard" ? "active" : ""}">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Overview</span>
+        </a>
+        <a href="/dashboard/projects" class="admin-nav-link ${active === "projects" ? "active" : ""}">
+            <span class="material-symbols-outlined">folder_open</span>
+            <span>Projects</span>
+        </a>
+        <a href="/dashboard/blogs" class="admin-nav-link ${active === "blogs" ? "active" : ""}">
+            <span class="material-symbols-outlined">edit_note</span>
+            <span>Writing</span>
+        </a>
+    </nav>
+
+    <div class="admin-user-card">
+        <div class="admin-avatar">DR</div>
+        <div>
+            <p>Disna Radita</p>
+            <span>Administrator</span>
         </div>
     </div>
-    <div class="navbar-line"></div>
-</nav>`;
+
+    <form method="POST" action="/logout" class="admin-logout-form">
+        <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
+        <button type="submit" class="admin-nav-link admin-logout-link">
+            <span class="material-symbols-outlined">logout</span>
+            <span>Logout</span>
+        </button>
+    </form>
+</aside>
+
+<header class="admin-topbar">
+    <div>
+        <span class="admin-env-label">Environment:</span>
+        <span class="admin-env-value">Production</span>
+    </div>
+    <div class="admin-topbar-actions">
+        <a href="${createHref}" class="admin-create-link">
+            <span class="material-symbols-outlined">add</span>
+            <span>Create Entry</span>
+        </a>
+        <span class="material-symbols-outlined admin-topbar-icon">notifications</span>
+        <span class="material-symbols-outlined admin-topbar-icon">search</span>
+    </div>
+</header>`;
 }
 
 function footer(text: string): string {
@@ -437,98 +457,140 @@ export function renderProjectsPage(projects: Project[], selectedCategory: string
 }
 
 export function renderDashboardPage(summary: DashboardSummary, csrfToken: string, flash: FlashData): string {
+  const totalRecords = summary.projectCount + summary.blogCount;
+  const recentRecords = [
+    ...summary.recentProjects.map((project) => ({
+      category: project.category,
+      href: "/dashboard/projects",
+      icon: "folder_open",
+      metric: `${formatKilobytes(project.fileSize)} KB`,
+      meta: `${project.originalFilename} / ${formatDateShort(project.createdAt)}`,
+      status: "Project",
+      statusClass: "badge-project",
+      title: project.title,
+    })),
+    ...summary.recentBlogs.map((blog) => ({
+      category: "Writing",
+      href: "/dashboard/blogs",
+      icon: "edit_note",
+      metric: blog.publishedAt ? formatDateShort(blog.publishedAt) : "Not published",
+      meta: blog.subtitle || "Blog post",
+      status: blog.status.charAt(0).toUpperCase() + blog.status.slice(1),
+      statusClass: blog.status === "published" ? "badge-success" : "badge-warning",
+      title: blog.title,
+    })),
+  ].slice(0, 6);
+
   return htmlDocument(
     "Dashboard",
     `${dashboardNavbar("dashboard", csrfToken)}
     ${renderToast(flash)}
 
     <div class="dashboard-wrapper">
-        <div class="container">
+        <div class="admin-container">
             <div class="dashboard-header">
-                <div class="dashboard-title">
-                    <h1>Dashboard</h1>
+                <div>
+                    <h1>System Overview</h1>
+                    <p>Real-time overview from your current portfolio records.</p>
                 </div>
-                <hr class="divider">
             </div>
 
             <div class="summary-grid">
-                <a href="/dashboard/projects" class="summary-card">
-                    <div class="summary-icon"></div>
+                <div class="summary-card summary-card-wide">
                     <div class="summary-info">
-                        <span class="summary-count">${summary.projectCount}</span>
-                        <span class="summary-label">Projects</span>
+                        <span class="summary-label">Total Records</span>
+                        <span class="summary-count">${totalRecords}</span>
+                        <span class="summary-note positive">Portfolio entries across projects and writing</span>
                     </div>
-                </a>
+                    <span class="material-symbols-outlined summary-watermark">insights</span>
+                </div>
 
                 <a href="/dashboard/blogs" class="summary-card">
-                    <div class="summary-icon"></div>
                     <div class="summary-info">
-                        <span class="summary-count">${summary.blogCount}</span>
-                        <span class="summary-label">Blog Posts</span>
+                        <span class="summary-label">Published</span>
+                        <span class="summary-count">${summary.publishedBlogCount}</span>
+                        <span class="summary-note">Live articles</span>
+                    </div>
+                </a>
+
+                <a href="/dashboard/projects" class="summary-card">
+                    <div class="summary-info">
+                        <span class="summary-label">Active Projects</span>
+                        <span class="summary-count">${summary.projectCount}</span>
+                        <span class="summary-progress"><span></span></span>
                     </div>
                 </a>
 
                 <div class="summary-card">
-                    <div class="summary-icon"></div>
                     <div class="summary-info">
-                        <span class="summary-count">${summary.publishedBlogCount}</span>
-                        <span class="summary-label">Published</span>
-                    </div>
-                </div>
-
-                <div class="summary-card">
-                    <div class="summary-icon"></div>
-                    <div class="summary-info">
-                        <span class="summary-count">${summary.draftBlogCount}</span>
-                        <span class="summary-label">Drafts</span>
+                        <span class="summary-label">Writing Frequency</span>
+                        <span class="summary-count">${summary.blogCount.toString().padStart(2, "0")}</span>
+                        <span class="summary-note">${summary.draftBlogCount} draft${summary.draftBlogCount === 1 ? "" : "s"} in progress</span>
                     </div>
                 </div>
             </div>
 
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <h3>Recent Projects</h3>
-                    <a href="/dashboard/projects" class="section-link">View All &rarr;</a>
+            <section class="records-section">
+                <div class="records-toolbar">
+                    <div class="records-tabs">
+                        <a href="/dashboard" class="active">All Records</a>
+                        <a href="/dashboard/projects">Projects</a>
+                        <a href="/dashboard/blogs">Writing</a>
+                    </div>
+                    <div class="records-sort">
+                        <span>Sort by</span>
+                        <strong>Latest Activity</strong>
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </div>
                 </div>
-                ${summary.recentProjects.length === 0 ? `<p class="empty-text">No projects yet.</p>` : `<div class="project-list">
-                    ${summary.recentProjects.map((project) => `<div class="project-item">
-                            <div class="project-item-info">
-                                <h5>${escapeHtml(project.title)}</h5>
-                                <p class="file-details">
-                                    ${escapeHtml(project.category)} &bull;
-                                    ${escapeHtml(project.originalFilename)}
-                                </p>
-                            </div>
-                        </div>`).join("")}
-                </div>`}
-            </div>
 
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <h3>Recent Blogs</h3>
-                    <a href="/dashboard/blogs" class="section-link">View All &rarr;</a>
+                <div class="records-panel">
+                    ${recentRecords.length === 0 ? `<div class="empty-state">
+                        <p>No records yet. Start by adding a project or blog post.</p>
+                    </div>` : `<table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>Record Title</th>
+                                <th>Status</th>
+                                <th>Category</th>
+                                <th>Metrics</th>
+                                <th>Control</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recentRecords.map((record) => `<tr>
+                                <td>
+                                    <div class="record-title-cell">
+                                        <span class="record-thumb">
+                                            <span class="material-symbols-outlined">${record.icon}</span>
+                                        </span>
+                                        <div>
+                                            <strong>${escapeHtml(record.title)}</strong>
+                                            <small>${escapeHtml(record.meta)}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge ${record.statusClass}">${escapeHtml(record.status)}</span></td>
+                                <td>${escapeHtml(record.category)}</td>
+                                <td>${escapeHtml(record.metric)}</td>
+                                <td><a href="${record.href}" class="table-action" aria-label="Open record management"><span class="material-symbols-outlined">arrow_forward</span></a></td>
+                            </tr>`).join("")}
+                        </tbody>
+                    </table>
+                    <div class="records-footer">
+                        <span>Showing ${recentRecords.length} of ${totalRecords} entries</span>
+                        <div>
+                            <a href="/dashboard/projects">Projects</a>
+                            <a href="/dashboard/blogs">Writing</a>
+                        </div>
+                    </div>`}
                 </div>
-                ${summary.recentBlogs.length === 0 ? `<p class="empty-text">No blog posts yet.</p>` : `<div class="project-list">
-                    ${summary.recentBlogs.map((blog) => `<div class="project-item">
-                            <div class="project-item-info">
-                                <div>
-                                    <h5>${escapeHtml(blog.title)}</h5>
-                                    <span class="badge ${blog.status === "published" ? "badge-success" : "badge-warning"}">
-                                        ${escapeHtml(blog.status.charAt(0).toUpperCase() + blog.status.slice(1))}
-                                    </span>
-                                </div>
-                                <p class="file-details">
-                                    ${blog.publishedAt ? escapeHtml(formatDateShort(blog.publishedAt)) : "Not published"}
-                                </p>
-                            </div>
-                        </div>`).join("")}
-                </div>`}
-            </div>
-
+            </section>
         </div>
     </div>
 
     ${footer("&copy; 2025 Dr")}`,
+    "admin-page",
   );
 }
 
@@ -734,6 +796,7 @@ export function renderDashboardProjectsPage(options: {
             </div>
         </div>
     </div>`,
+    "admin-page",
   );
 }
 
@@ -1002,6 +1065,7 @@ export function renderDashboardBlogsPage(options: {
             </div>
         </div>
     </div>`,
+    "admin-page",
   );
 }
 
