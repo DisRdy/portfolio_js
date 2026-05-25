@@ -330,11 +330,8 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
 
     <main class="login-shell">
         <header class="login-brand">
-            <div class="login-brand-icon">
-                <span class="material-symbols-outlined">architecture</span>
-            </div>
             <div>
-                <h1>DevArchitect</h1>
+                <h1>DR</h1>
                 <p>Precision Control Portal</p>
             </div>
         </header>
@@ -366,19 +363,10 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
                     <span class="material-symbols-outlined">arrow_forward</span>
                 </button>
             </form>
-
-            <p class="login-secondary">
-                New to the architecture?
-                <a href="/register">Register access</a>
-            </p>
         </section>
 
         <footer class="login-footer">
-            <div class="login-status">
-                <span></span>
-                <strong>System Status: Optimal</strong>
-            </div>
-            <p>&copy; 2025 DevArchitect. Precision Engineered.</p>
+            <p>&copy; 2025 DR. Precision Engineered.</p>
         </footer>
     </main>
 
