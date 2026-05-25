@@ -39,6 +39,60 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'Write a paragraph';
     };
 
+    const showClientToast = function (message) {
+        const toast = document.createElement('div');
+        toast.className = 'client-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        window.setTimeout(function () {
+            toast.classList.add('hide');
+            window.setTimeout(function () {
+                toast.remove();
+            }, 250);
+        }, 2200);
+    };
+
+    const copyToClipboard = async function (value) {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(value);
+            return;
+        }
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'clipboard-copy-buffer';
+        textarea.value = value;
+        textarea.setAttribute('readonly', '');
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+    };
+
+    document.querySelectorAll('[data-share-article]').forEach(function (button) {
+        button.addEventListener('click', async function () {
+            const shareData = {
+                title: button.dataset.shareTitle || document.title,
+                text: button.dataset.shareText || '',
+                url: window.location.href,
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    return;
+                } catch (error) {
+                    if (error && error.name === 'AbortError') {
+                        return;
+                    }
+                }
+            }
+
+            await copyToClipboard(shareData.url);
+            showClientToast('Link copied to clipboard!');
+        });
+    });
+
     document.querySelectorAll('[data-block-editor]').forEach(function (editor) {
         const target = document.getElementById(editor.dataset.target);
         const list = editor.querySelector('.block-editor-list');

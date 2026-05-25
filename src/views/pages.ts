@@ -901,6 +901,8 @@ export function renderBlogIndexPage(blogs: Blog[]): string {
 }
 
 export function renderBlogShowPage(blog: Blog): string {
+  const shareText = blog.excerpt || blog.subtitle || truncate(blog.content, 180);
+
   return htmlDocument(
     `${blog.title} - Dr`,
     `${publicNavbar("blog")}
@@ -928,9 +930,11 @@ export function renderBlogShowPage(blog: Blog): string {
             <div class="article-footer">
                 <div class="article-tags">${renderTagChips(blog.tags)}</div>
                 <div class="article-actions">
-                    <span><span class="material-symbols-outlined">favorite</span> 1.2k</span>
-                    <span><span class="material-symbols-outlined">chat_bubble</span> 48</span>
-                    <button type="button" aria-label="Share article"><span class="material-symbols-outlined">share</span></button>
+                    <button type="button" aria-label="Share article" data-share-article
+                        data-share-title="${escapeAttribute(blog.title)}"
+                        data-share-text="${escapeAttribute(shareText)}">
+                        <span class="material-symbols-outlined">share</span>
+                    </button>
                 </div>
             </div>
         </article>
