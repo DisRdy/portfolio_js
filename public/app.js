@@ -189,8 +189,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (navToggle && navMenu) {
         navToggle.addEventListener('click', function () {
-            this.classList.toggle('active');
-            navMenu.classList.toggle('active');
+            const isOpen = this.classList.toggle('active');
+            navMenu.classList.toggle('active', isOpen);
+            this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         });
 
         // Close menu when clicking outside
@@ -200,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!isClickInside && navMenu.classList.contains('active')) {
                 navToggle.classList.remove('active');
                 navMenu.classList.remove('active');
+                navToggle.setAttribute('aria-expanded', 'false');
             }
         });
 
@@ -209,6 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
             link.addEventListener('click', function () {
                 navToggle.classList.remove('active');
                 navMenu.classList.remove('active');
+                navToggle.setAttribute('aria-expanded', 'false');
             });
         });
     }

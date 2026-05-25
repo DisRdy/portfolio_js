@@ -24,7 +24,7 @@ function publicNavbar(active: "home" | "projects" | "blog" | "comments"): string
             </a>
         </div>
 
-        <button class="navbar-toggle" id="navToggle" aria-label="Toggle Navigation">
+        <button class="navbar-toggle" id="navToggle" aria-label="Toggle Navigation" aria-controls="navMenu" aria-expanded="false">
             <span class="toggle-line"></span>
             <span class="toggle-line"></span>
             <span class="toggle-line"></span>
@@ -89,13 +89,7 @@ function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: 
     </form>
 </aside>
 
-<header class="admin-topbar">
-    <div class="admin-topbar-actions">
-        <span class="material-symbols-outlined admin-topbar-icon">notifications</span>
-        <span class="material-symbols-outlined admin-topbar-icon">search</span>
-    </div>
-</header>`;
-}
+<header class="admin-topbar"></header>`;}
 
 function footer(text: string): string {
   return `<footer>
@@ -170,74 +164,130 @@ function renderTagChips(tags: string[]): string {
   return resolvedTags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
 }
 
-export function renderHomePage(): string {
-  return publicLayout(
-    "Dr",
-    "home",
-    `<header>
-        <p class="brand-ts">Hi, Welcome!</p>
-    </header>
+const PROJECT_CATEGORY_OPTIONS = [
+  ["website", "Website"],
+  ["data-analytics", "Data & Analytics"],
+] as const;
 
-    <div class="container">
-        <section>
-            <h2>Me? <span class="brand-ts-2xl">Disna Radita</span></h2>
-            <p>My background is in Laravel, with growing focus on penetration testing, and Web3.<br>
-                I have experience building web applications with Laravel. Now I'm also expanding my knowledge in Web3.
-            </p>
-        </section>
+function projectCategoryLabel(category: string | null | undefined): string {
+  const found = PROJECT_CATEGORY_OPTIONS.find(([value]) => value === category);
+  return found?.[1] ?? "Website";
+}
 
-        <section>
-            <h2>Technical Skills</h2>
-            <div class="skills-list">
-                <div class="skill-item">
-                    <strong>None</strong>
-                    <p>Huftssss</p>
-                </div>
-                <div class="skill-item">
-                    <strong>None</strong>
-                    <p>Huftssss</p>
-                </div>
-                <div class="skill-item">
-                    <strong>None</strong>
-                    <p>Huftssss</p>
-                </div>
+export function renderHomePage(projects: Project[], blogs: Blog[]): string {
+  const experiences = [
+    ["IT Support & Web Development", "Independent Projects", "2024 - Now"],
+    ["Data Analyst Student", "INSTIKI - Informatika", "2023 - Now"],
+    ["Operations Driver", "FinExpress", "2021 - 2024"],
+  ];
+
+  const projectCards = projects.length > 0 ? projects.slice(0, 3).map((project) => `<a href="/project/${project.id}/download" class="home-mini-card">
+        <span class="home-card-external material-symbols-outlined">open_in_new</span>
+        <span class="home-project-icon material-symbols-outlined">rocket_launch</span>
+        <strong>${escapeHtml(project.title)}</strong>
+        <small>${escapeHtml(projectCategoryLabel(project.category))}</small>
+        <em>${escapeHtml(project.originalFilename)} &middot; ${escapeHtml(formatKilobytes(project.fileSize))} KB</em>
+    </a>`).join("") : `<p class="home-empty">Belum ada project terbaru.</p>`;
+
+  const blogCards = blogs.length > 0 ? blogs.slice(0, 3).map((blog) => `<a href="/blog/${encodeURIComponent(blog.slug)}" class="home-mini-card home-blog-card">
+        <span class="home-card-external material-symbols-outlined">open_in_new</span>
+        <span class="home-chip">${escapeHtml(blogCategoryLabel(blog))}</span>
+        <strong>${escapeHtml(blog.title)}</strong>
+        <p>${escapeHtml(blog.excerpt || blog.subtitle || truncate(blog.content, 120))}</p>
+        <small>${escapeHtml(formatDateBlog(blog.publishedAt))}</small>
+    </a>`).join("") : `<p class="home-empty">Belum ada artikel terbaru.</p>`;
+
+  return htmlDocument(
+    "Disna Radita",
+    `${publicNavbar("home")}
+
+    <main class="home-shell">
+        <section class="home-hero">
+            <h1>Disna Radita</h1>
+            <p>Mahasiswa Informatika di INSTIKI (Institut Bisnis Dan Teknologi Indonesia) dengan fokus pada Data Analyst.</p>
+            <div class="home-cta">
+                <a href="#contact">WhatsApp</a>
+                <a href="#contact">Contact</a>
+                <a href="/projects">Download CV</a>
             </div>
         </section>
 
-        <section>
-            <h2>Experience</h2>
-            <p>I've worked on a variety of projects, from small applications to more complex systems. This experience
-                has taught me the importance of clean code and documentation.</p>
-            <ul>
-                <li>Been a driver at FinExpress for 3 years (Work)</li>
-                <li>Make a full-stack web applications with Laravel (Project)</li>
-                <li>Database design and optimization (Project)</li>
-            </ul>
+        <section class="home-card">
+            <div class="home-section-header">
+                <div>
+                    <span class="material-symbols-outlined">fingerprint</span>
+                    <h2>About</h2>
+                </div>
+            </div>
+            <p class="home-body-text">Saya adalah mahasiswa Informatika yang senang membangun produk web yang rapi, memahami data, dan merapikan masalah menjadi alur kerja yang bisa dipakai. Di antara kode, analisis, dan eksplorasi sistem, saya mencari cara agar teknologi terasa sederhana, jelas, dan berguna.</p>
+            <div class="home-info-grid">
+                <span><span class="material-symbols-outlined">location_on</span>Bali, Indonesia</span>
+                <span><span class="material-symbols-outlined">school</span>INSTIKI - Informatika</span>
+            </div>
         </section>
 
-        <section id="skills">
-            <h2>Skills</h2>
-            <ul>
-                <li>Linux Tools</li>
-                <li>Penetration Testing</li>
-                <li>Web Dev</li>
-                <li>IT Support</li>
-            </ul>
+        <section class="home-card">
+            <div class="home-section-header">
+                <div>
+                    <span class="material-symbols-outlined">work</span>
+                    <h2>Experience</h2>
+                </div>
+                <a href="/experience">View all &gt;</a>
+            </div>
+            <div class="home-list">
+                ${experiences.map(([role, org, date]) => `<div class="home-list-item">
+                    <div>
+                        <strong>${role}</strong>
+                        <small>${org}</small>
+                    </div>
+                    <time>${date}</time>
+                </div>`).join("")}
+            </div>
         </section>
 
-        <section id="contact">
-            <h2>Contact</h2>
-            <p>If you're interested in collaborating or just want to say hello, feel free to reach out to me:</p>
-            <p>
-                Email: <a href="mailto:disnaraditya@gmail.com">disnaraditya@gmail.com</a><br>
-                GitHub: <a href="https://github.com/DisRdy" target="_blank" rel="noopener noreferrer">My github</a><br>
-                Dev: <a href="https://dev.to/lamp" target="_blank" rel="noopener noreferrer">Dev community</a> <br>
-                Instagram: <a href="https://www.instagram.com/dsnardy?igsh=bDNubXduNmNsYTM1" target="_blank" rel="noopener noreferrer">My
-                    Instagram</a>
-            </p>
+        <section class="home-card">
+            <div class="home-section-header">
+                <div>
+                    <span class="material-symbols-outlined">rocket_launch</span>
+                    <h2>Projects</h2>
+                </div>
+                <a href="/projects">View all &gt;</a>
+            </div>
+            <div class="home-mini-grid">${projectCards}</div>
         </section>
-    </div>`,
-    "&copy; 2025 Dr",
+
+        <section class="home-card">
+            <div class="home-section-header">
+                <div>
+                    <span class="material-symbols-outlined">article</span>
+                    <h2>Blog</h2>
+                </div>
+                <a href="/blog">View all &gt;</a>
+            </div>
+            <div class="home-mini-grid">${blogCards}</div>
+        </section>
+
+        <section class="home-card" id="contact">
+            <div class="home-section-header">
+                <div>
+                    <span class="material-symbols-outlined">mail</span>
+                    <h2>Contact</h2>
+                </div>
+            </div>
+            <div class="home-contact-row">
+                <p class="home-body-text">Tertarik berkolaborasi atau sekadar ingin menyapa? Jangan ragu untuk menghubungi saya.</p>
+                <div class="home-contact-icons" aria-label="Contact links">
+                    <a href="mailto:disnaraditya@gmail.com" aria-label="Email Disna Radita"><span class="material-symbols-outlined">mail</span></a>
+                    <a href="https://github.com/DisRdy" target="_blank" rel="noopener noreferrer" aria-label="GitHub Disna Radita"><span class="material-symbols-outlined">code</span></a>
+                    <a href="https://dev.to/lamp" target="_blank" rel="noopener noreferrer" aria-label="Dev Community Disna Radita"><span class="material-symbols-outlined">laptop_mac</span></a>
+                    <a href="https://www.instagram.com/dsnardy?igsh=bDNubXduNmNsYTM1" target="_blank" rel="noopener noreferrer" aria-label="Instagram Disna Radita"><span class="material-symbols-outlined">photo_camera</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    ${footer("&copy; 2025 Dr")}`,
+    "portfolio-home",
   );
 }
 
@@ -249,72 +299,83 @@ export function renderCommentsPage(options: {
 }): string {
   const { comments, currentUser, flash, csrfToken } = options;
   const errors = flash.errors;
-  return publicLayout(
+  return htmlDocument(
     "Comments",
-    "comments",
-    `<header>
-        <p class="brand-ts">Comments & suggestion</p>
-    </header>
+    `${publicNavbar("comments")}
 
     ${renderToast(flash)}
 
-    <div class="container">
-        <div>
-            <div class="main-content" id="comments">
-                <div class="comment-form-wrapper">
-                    <div class="comment-form-section">
-                        <div class="comment-limit-info"></div>
-                        <h3>Tulis Komentar</h3>
+    <main class="comments-shell">
+        <header class="comments-hero">
+            <span>Guestbook</span>
+            <h1>Comments & suggestions.</h1>
+            <p>Tinggalkan pesan singkat, ide, atau sapaan. Semua komentar akan tampil sebagai bagian dari ruang kecil portfolio ini.</p>
+        </header>
 
-                        <form method="POST" action="/comments">
+        <section class="comments-panel" id="comments">
+            <div class="comments-panel-header">
+                <div>
+                    <span class="material-symbols-outlined">forum</span>
+                    <h2>Conversation</h2>
+                </div>
+                <strong>${comments.length} message${comments.length === 1 ? "" : "s"}</strong>
+            </div>
+
+            <div class="comments-layout">
+                <section class="comment-form-section">
+                    <h3>Tulis Komentar</h3>
+                    <p>Nama dan pesanmu akan disimpan sebagai komentar public.</p>
+
+                    <form method="POST" action="/comments" class="comment-form">
                             <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
                             <div>
-                                <label for="name" class="form-group-label">Name</label>
+                                <label for="name">Name</label>
                                 <input type="text" id="name" name="name" required maxlength="255"
-                                    placeholder="Masukkan nama Anda" class="form-input">
-                                ${renderValidationError(errors, "name")}
+                                    placeholder="Masukkan nama Anda">
+                                ${renderValidationError(errors, "name", "comment-error")}
                             </div>
 
                             <div>
-                                <label for="comment" class="form-group-label">Komentar Anda</label>
+                                <label for="comment">Komentar Anda</label>
                                 <textarea id="comment" name="comment" required maxlength="1000" rows="5"
-                                    placeholder="Bagikan pemikiran, saran, atau pertanyaan Anda..."
-                                    class="form-textarea"></textarea>
-                                <small class="form-help-text">Maksimal 1000 karakter</small>
-                                ${renderValidationError(errors, "comment")}
+                                    placeholder="Bagikan pemikiran, saran, atau pertanyaan Anda..."></textarea>
+                                <small>Maksimal 1000 karakter</small>
+                                ${renderValidationError(errors, "comment", "comment-error")}
                             </div>
 
-                            <button type="submit" class="btn">
-                                Kirim Komentar
+                            <button type="submit">
+                                <span>Kirim Komentar</span>
+                                <span class="material-symbols-outlined">arrow_forward</span>
                             </button>
-                        </form>
-                    </div>
+                    </form>
+                </section>
 
-                    <div>
-                        <h3 class="comment-list-title">Daftar Komentar (${comments.length})</h3>
+                <section class="comment-list-section">
+                    <h3>Daftar Komentar</h3>
 
-                        ${comments.length > 0 ? `<div class="comment-list">
-                            ${comments.map((comment) => `<div class="comment-item">
-                                    <div class="comment-meta">
-                                        <div>
-                                            <h4>${escapeHtml(comment.name)}</h4>
-                                            <p class="comment-date">
-                                                ${escapeHtml(formatDateLongTime(comment.createdAt))}
-                                            </p>
-                                        </div>
-                                        ${currentUser && currentUser.id === comment.userId ? `<span class="comment-author-badge">Anda</span>` : ""}
+                    ${comments.length > 0 ? `<div class="comment-list">
+                        ${comments.map((comment) => `<article class="comment-item">
+                                <div class="comment-meta">
+                                    <div>
+                                        <h4>${escapeHtml(comment.name)}</h4>
+                                        <time datetime="${escapeAttribute(comment.createdAt ?? "")}">
+                                            ${escapeHtml(formatDateLongTime(comment.createdAt))}
+                                        </time>
                                     </div>
-                                    <p class="comment-text">${escapeHtml(comment.comment)}</p>
-                                </div>`).join("")}
-                        </div>` : `<div class="empty-state">
-                            <p>Belum ada komentar. Jadilah yang pertama memberikan komentar!</p>
-                        </div>`}
-                    </div>
-                </div>
+                                    ${currentUser && currentUser.id === comment.userId ? `<span class="comment-author-badge">Anda</span>` : ""}
+                                </div>
+                                <p>${escapeHtml(comment.comment)}</p>
+                            </article>`).join("")}
+                    </div>` : `<div class="comments-empty">
+                        <p>Belum ada komentar. Jadilah yang pertama memberikan komentar!</p>
+                    </div>`}
+                </section>
             </div>
-        </div>
-    </div>`,
-    "&copy; 2025 Dr",
+        </section>
+    </main>
+
+    ${footer("&copy; 2025 Dr")}`,
+    "comments-page",
   );
 }
 
@@ -345,7 +406,7 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
                 <div class="login-field">
                     <label for="email">Work Email</label>
                     <input type="email" name="email" id="email" value="${escapeAttribute(oldValue(old, "email"))}" required autofocus
-                        placeholder="architect@dev.io">
+                        placeholder="exsample@ex.com">
                     ${renderValidationError(errors, "email", "login-error")}
                 </div>
 
@@ -354,7 +415,7 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
                         <label for="password">Access Token</label>
                         <span>Secure</span>
                     </div>
-                    <input type="password" name="password" id="password" required placeholder="••••••••••••">
+                    <input type="password" name="password" id="password" required placeholder="Stt....">
                     ${renderValidationError(errors, "password", "login-error")}
                 </div>
 
@@ -431,20 +492,18 @@ export function renderRegisterPage(flash: FlashData, csrfToken: string): string 
 }
 
 function publicProjectCard(project: Project): string {
-  return `<div class="project-card">
-        <div class="project-header">
-            <h4>${escapeHtml(project.title)}</h4>
-            <p class="project-date">${escapeHtml(formatDateLong(project.createdAt))}</p>
-        </div>
-        <div class="project-body">
-            ${project.description ? `<p>${escapeHtml(truncate(project.description, 150))}</p>` : ""}
-            <div class="file-info">
-                <p><strong>${escapeHtml(project.originalFilename)}</strong></p>
-                <small>${escapeHtml(formatKilobytes(project.fileSize))} KB</small>
-            </div>
-            <a href="/project/${project.id}/download" class="btn">Download File</a>
-        </div>
-    </div>`;
+  return `<a href="/project/${project.id}/download" class="project-card">
+        <span class="project-card-external material-symbols-outlined">open_in_new</span>
+        <span class="project-icon material-symbols-outlined">folder_open</span>
+        <strong>${escapeHtml(project.title)}</strong>
+        <small>${escapeHtml(projectCategoryLabel(project.category))}</small>
+        ${project.description ? `<p>${escapeHtml(truncate(project.description, 150))}</p>` : `<p>Project file siap diunduh dari portfolio collection.</p>`}
+        <span class="project-file">
+            <span>${escapeHtml(project.originalFilename)}</span>
+            <em>${escapeHtml(formatKilobytes(project.fileSize))} KB</em>
+        </span>
+        <time>${escapeHtml(formatDateLong(project.createdAt))}</time>
+    </a>`;
 }
 
 export function renderProjectsPage(projects: Project[], selectedCategory: string | null): string {
@@ -455,77 +514,75 @@ export function renderProjectsPage(projects: Project[], selectedCategory: string
     groupedProjects.set(project.category, list);
   }
 
-  const categoryLabels: Record<string, string> = {
-    design: "Design",
-    pdf: "Dokumentasi",
-    tutorial: "Tutorial IT",
-    certificate: "Sertifikat",
-  };
-
   let content = "";
   if (projects.length === 0) {
-    content = `<div class="alert alert-info">
-                    <p>
-                        ${selectedCategory
-      ? `Belum ada proyek dalam kategori <strong>${escapeHtml(selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1))}</strong>.`
-      : "Belum ada proyek yang diupload."}
-                    </p>
+    content = `<div class="projects-empty">
+                    <p>${selectedCategory
+      ? `Belum ada proyek dalam kategori <strong>${escapeHtml(projectCategoryLabel(selectedCategory))}</strong>.`
+      : "Belum ada proyek yang diupload."}</p>
                 </div>`;
   } else if (selectedCategory) {
-    const label = categoryLabels[selectedCategory] ?? `${selectedCategory.charAt(0).toUpperCase()}${selectedCategory.slice(1)}`;
-    content = `<div>
-                        <h3 class="category-title">${escapeHtml(label)}</h3>
-                        <p class="category-count">Total: <strong>${projects.length}</strong> proyek</p>
-                        <div class="grid-auto-lg">
+    content = `<section class="project-category-section">
+                        <div class="project-category-heading">
+                            <h2>${escapeHtml(projectCategoryLabel(selectedCategory))}</h2>
+                            <span>${projects.length} project</span>
+                        </div>
+                        <div class="projects-grid">
                             ${projects.map(publicProjectCard).join("")}
                         </div>
-                    </div>`;
+                    </section>`;
   } else {
-    content = ([
-      ["design", "Design"],
-      ["pdf", "Dokumentasi"],
-      ["tutorial", "Tutorial IT"],
-      ["certificate", "Sertifikat"],
-    ] as const).map(([key, label]) => {
+    content = PROJECT_CATEGORY_OPTIONS.map(([key, label]) => {
       const group = groupedProjects.get(key);
       if (!group?.length) {
         return "";
       }
 
-      return `<div>
-                <h3 class="category-title">${escapeHtml(label)}</h3>
-                <p class="category-count">Total: <strong>${group.length}</strong></p>
-                <div class="grid-auto-lg">
+      return `<section class="project-category-section">
+                <div class="project-category-heading">
+                    <h2>${escapeHtml(label)}</h2>
+                    <span>${group.length} project</span>
+                </div>
+                <div class="projects-grid">
                     ${group.map(publicProjectCard).join("")}
                 </div>
-            </div>`;
+            </section>`;
     }).join("");
   }
 
-  return publicLayout(
-    "Project",
-    "projects",
-    `<header>
-        <p class="brand-ts">My Collection</p>
-    </header>
+  if (!content.trim()) {
+    content = `<div class="projects-empty"><p>Belum ada proyek yang cocok dengan kategori portfolio saat ini.</p></div>`;
+  }
 
-    <div class="container">
-        <section>
-            <h2>Projects</h2>
+  return htmlDocument(
+    "Projects",
+    `${publicNavbar("projects")}
 
-            <div class="category-nav">
-                <span class="category-label">Filter Kategori:</span>
-                <a href="/projects" class="${selectedCategory ? "" : "active"}">Semua Kategori</a>
-                <a href="/projects?category=design" class="${selectedCategory === "design" ? "active" : ""}">Design</a>
-                <a href="/projects?category=pdf" class="${selectedCategory === "pdf" ? "active" : ""}">Dokumentasi</a>
-                <a href="/projects?category=tutorial" class="${selectedCategory === "tutorial" ? "active" : ""}">Tutorial IT</a>
-                <a href="/projects?category=certificate" class="${selectedCategory === "certificate" ? "active" : ""}">Sertifikat</a>
+    <main class="projects-shell">
+        <header class="projects-hero">
+            <span>Portfolio Collection</span>
+            <h1>Projects</h1>
+            <p>Kumpulan pekerjaan terpilih, dibagi menjadi website dan data analytics agar lebih mudah dipindai.</p>
+        </header>
+
+        <section class="projects-panel">
+            <div class="projects-toolbar">
+                <div>
+                    <span class="material-symbols-outlined">rocket_launch</span>
+                    <strong>Project Index</strong>
+                </div>
+                <nav class="category-nav" aria-label="Project category filter">
+                    <a href="/projects" class="${selectedCategory ? "" : "active"}">All</a>
+                    ${PROJECT_CATEGORY_OPTIONS.map(([key, label]) => `<a href="/projects?category=${key}" class="${selectedCategory === key ? "active" : ""}">${escapeHtml(label)}</a>`).join("")}
+                </nav>
             </div>
 
             ${content}
         </section>
-    </div>`,
-    "&copy; 2025 Dr",
+    </main>
+
+    ${footer("&copy; 2025 Dr")}`,
+    "projects-page",
   );
 }
 
@@ -533,7 +590,7 @@ export function renderDashboardPage(summary: DashboardSummary, csrfToken: string
   const totalRecords = summary.projectCount + summary.blogCount;
   const recentRecords = [
     ...summary.recentProjects.map((project) => ({
-      category: project.category,
+      category: projectCategoryLabel(project.category),
       href: "/dashboard/projects",
       icon: "folder_open",
       metric: `${formatKilobytes(project.fileSize)} KB`,
@@ -697,13 +754,7 @@ export function renderDashboardProjectsPage(options: {
                 <hr class="divider">
             </div>
 
-            ${projects.length === 0 ? `<div class="empty-state"><p>Anda belum memiliki project. Upload project pertama Anda!</p></div>` : ([
-      ["design", "Design"],
-      ["pdf", "Dokumentasi"],
-      ["cybersecurity", "Cybersecurity"],
-      ["tutorial", "Tutorial IT"],
-      ["certificate", "Sertifikat"],
-    ] as const).map(([key, label]) => {
+            ${projects.length === 0 ? `<div class="empty-state"><p>Anda belum memiliki project. Upload project pertama Anda!</p></div>` : PROJECT_CATEGORY_OPTIONS.map(([key, label]) => {
       const group = groupedProjects.get(key);
       if (!group?.length) {
         return "";
@@ -774,11 +825,7 @@ export function renderDashboardProjectsPage(options: {
                     <label class="form-group-label">Kategori</label>
                     <select name="category" class="form-input" required>
                         <option value="">-- Pilih Kategori --</option>
-                        <option value="design" ${selectedValue(old, "category", "design")}>Design</option>
-                        <option value="pdf" ${selectedValue(old, "category", "pdf")}>PDF</option>
-                        <option value="cybersecurity" ${selectedValue(old, "category", "cybersecurity")}>Cybersecurity</option>
-                        <option value="tutorial" ${selectedValue(old, "category", "tutorial")}>Tutorial</option>
-                        <option value="certificate" ${selectedValue(old, "category", "certificate")}>Sertifikat</option>
+                        ${PROJECT_CATEGORY_OPTIONS.map(([key, label]) => `<option value="${key}" ${selectedValue(old, "category", key)}>${escapeHtml(label)}</option>`).join("")}
                     </select>
                     ${renderValidationError(errors, "category")}
                 </div>
@@ -821,11 +868,7 @@ export function renderDashboardProjectsPage(options: {
                 <div>
                     <label class="form-group-label">Kategori</label>
                     <select name="category" id="edit-project-category" class="form-input" required>
-                        <option value="design">Design</option>
-                        <option value="pdf">PDF</option>
-                        <option value="cybersecurity">Cybersecurity</option>
-                        <option value="tutorial">Tutorial</option>
-                        <option value="certificate">Sertifikat</option>
+                        ${PROJECT_CATEGORY_OPTIONS.map(([key, label]) => `<option value="${key}">${escapeHtml(label)}</option>`).join("")}
                     </select>
                 </div>
 

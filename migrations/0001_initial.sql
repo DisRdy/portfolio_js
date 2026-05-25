@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS projects (
   user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
-  category TEXT NOT NULL CHECK(category IN ('design', 'pdf', 'cybersecurity', 'tutorial', 'certificate', 'web3')),
+  category TEXT NOT NULL,
   file_path TEXT NOT NULL,
   original_filename TEXT NOT NULL,
   file_size INTEGER NOT NULL,

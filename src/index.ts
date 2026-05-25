@@ -76,8 +76,8 @@ import {
   renderRegisterPage,
 } from "./views/pages";
 
-const PROJECT_CATEGORIES = ["design", "pdf", "cybersecurity", "tutorial", "certificate"] as const;
-const PUBLIC_PROJECT_FILTERS = ["design", "pdf", "cybersecurity", "tutorial", "certificate"] as const;
+const PROJECT_CATEGORIES = ["website", "data-analytics"] as const;
+const PUBLIC_PROJECT_FILTERS = PROJECT_CATEGORIES;
 const BLOG_STATUSES = ["draft", "published"] as const;
 const BLOG_BLOCK_TYPES = ["paragraph", "heading", "blockquote", "code", "image"] as const satisfies readonly BlogContentBlockType[];
 const MAX_FORM_BODY_BYTES = 12 * 1024 * 1024;
@@ -745,7 +745,11 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
   }
 
   if (method === "GET" && path === "/") {
-    return html(renderHomePage());
+    const [projects, blogs] = await Promise.all([
+      listProjectsForPublic(env),
+      listPublishedBlogs(env),
+    ]);
+    return html(renderHomePage(projects, blogs));
   }
 
   if (method === "GET" && path === "/projects") {

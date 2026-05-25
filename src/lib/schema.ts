@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS projects (
   user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
-  category TEXT NOT NULL CHECK(category IN ('design', 'pdf', 'cybersecurity', 'tutorial', 'certificate', 'web3')),
+  category TEXT NOT NULL,
   file_path TEXT NOT NULL,
   original_filename TEXT NOT NULL,
   file_size INTEGER NOT NULL,
@@ -144,6 +144,53 @@ export function ensureSchema(env: Env): Promise<void> {
       const statements = splitSchemaStatements(SCHEMA_SQL);
       if (statements.length > 0) {
         await env.DB.batch(statements.map((statement) => env.DB.prepare(statement)));
+      }
+
+      const projectTable = await env.DB.prepare(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'projects' LIMIT 1",
+      ).first<{ sql: string }>();
+
+      if (projectTable?.sql?.includes("CHECK(category IN")) {
+        const projectMigrationStatements = splitSchemaStatements(`
+          DROP TABLE IF EXISTS projects_category_migration;
+
+          CREATE TABLE projects_category_migration (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            category TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            original_filename TEXT NOT NULL,
+            file_size INTEGER NOT NULL,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+
+          INSERT INTO projects_category_migration (
+            id, user_id, title, description, category, file_path, original_filename, file_size, created_at, updated_at
+          )
+          SELECT
+            id,
+            user_id,
+            title,
+            description,
+            CASE
+              WHEN category IN ('data-analytics', 'data analyst', 'analytics') THEN 'data-analytics'
+              ELSE 'website'
+            END,
+            file_path,
+            original_filename,
+            file_size,
+            created_at,
+            updated_at
+          FROM projects;
+
+          DROP TABLE projects;
+          ALTER TABLE projects_category_migration RENAME TO projects;
+        `);
+        await env.DB.batch(projectMigrationStatements.map((statement) => env.DB.prepare(statement)));
       }
 
       const blogColumns = await env.DB.prepare("PRAGMA table_info(blogs)").all<{ name: string }>();
