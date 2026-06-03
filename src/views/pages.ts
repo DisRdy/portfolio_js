@@ -19,6 +19,17 @@ import { renderProjectModal, type ProjectPreviewMetric } from "./projectModal";
 const SITE_FOOTER_TEXT = "Built by Dr &copy; 2025 &mdash; All rights reserved.";
 const WHATSAPP_URL = "https://wa.me/qr/OY2Y7E536RXBA1";
 
+function renderPdfIcon(className: string): string {
+  return `<span class="${escapeAttribute(`${className} project-pdf-icon`)}" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M7 2.75h7.2l5.05 5.05v13.45H7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M14.2 2.75V7.8h5.05" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <rect x="3.75" y="10.25" width="12.25" height="6.5" rx="1.25" fill="currentColor"/>
+            <text x="5.1" y="14.75" fill="#ffffff" font-family="Arial, sans-serif" font-size="4.25" font-weight="900">PDF</text>
+        </svg>
+    </span>`;
+}
+
 function publicNavbar(active: "home" | "projects" | "blog" | "comments"): string {
   return `<nav class="kof-navbar">
     <div class="navbar-container">
@@ -505,7 +516,7 @@ export function renderRegisterPage(flash: FlashData, csrfToken: string): string 
 function publicProjectCard(project: Project): string {
   return `<article class="project-card">
         <span class="project-card-external material-symbols-outlined">open_in_new</span>
-        <span class="project-icon material-symbols-outlined">picture_as_pdf</span>
+        ${renderPdfIcon("project-icon")}
         <strong>${escapeHtml(project.title)}</strong>
         <small>${escapeHtml(projectCategoryLabel(project.category))}</small>
         ${project.description ? `<p>${escapeHtml(truncate(project.description, 150))}</p>` : `<p>Project PDF siap dibuka langsung dari portfolio collection.</p>`}

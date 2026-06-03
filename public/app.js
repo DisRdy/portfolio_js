@@ -148,6 +148,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }).format(date);
     };
 
+    const pdfIconHtml = function (className) {
+        return `<span class="${className} project-pdf-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7 2.75h7.2l5.05 5.05v13.45H7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
+                <path d="M14.2 2.75V7.8h5.05" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
+                <rect x="3.75" y="10.25" width="12.25" height="6.5" rx="1.25" fill="currentColor"></rect>
+                <text x="5.1" y="14.75" fill="#ffffff" font-family="Arial, sans-serif" font-size="4.25" font-weight="900">PDF</text>
+            </svg>
+        </span>`;
+    };
+
     const projectCardHtml = function (project) {
         const description = project.description
             ? escapeHtml(project.description)
@@ -155,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return `<article class="project-card">
             <span class="project-card-external material-symbols-outlined">open_in_new</span>
-            <span class="project-icon material-symbols-outlined">picture_as_pdf</span>
+            ${pdfIconHtml('project-icon')}
             <strong>${escapeHtml(project.title)}</strong>
             <small>${escapeHtml(projectCategoryLabel(project.category))}</small>
             <p>${description}</p>
@@ -248,6 +259,48 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!modalBackdrop || !modal) return;
 
+        const pdfFrame = modal.querySelector('[data-project-pdf-src]');
+        const pdfLoading = modal.querySelector('[data-project-pdf-loading]');
+        let loadedPdfSrc = '';
+        const isMobilePdfViewport = function () {
+            return window.matchMedia('(max-width: 720px)').matches;
+        };
+
+        const setPdfLoading = function (isLoading) {
+            if (!pdfLoading) return;
+            pdfLoading.hidden = !isLoading;
+        };
+
+        const syncPdfFrame = function () {
+            if (!pdfFrame) return;
+
+            const directSrc = pdfFrame.dataset.projectPdfSrc || '';
+            const nextSrc = isMobilePdfViewport() ? 'about:blank' : directSrc;
+            const currentSrc = pdfFrame.getAttribute('src') || '';
+
+            if (isMobilePdfViewport()) {
+                setPdfLoading(false);
+            } else if (nextSrc && (loadedPdfSrc !== nextSrc || currentSrc !== nextSrc)) {
+                setPdfLoading(true);
+            }
+
+            if (nextSrc && currentSrc !== nextSrc) {
+                pdfFrame.setAttribute('src', nextSrc);
+            } else if (!isMobilePdfViewport()) {
+                setPdfLoading(false);
+            }
+        };
+
+        if (pdfFrame) {
+            pdfFrame.addEventListener('load', function () {
+                const currentSrc = pdfFrame.getAttribute('src') || '';
+                if (currentSrc && currentSrc !== 'about:blank') {
+                    loadedPdfSrc = currentSrc;
+                    setPdfLoading(false);
+                }
+            });
+        }
+
         const syncPageLabel = function () {
             if (pageLabel) pageLabel.textContent = `Halaman ${currentPage} / ${totalPages}`;
             if (prevButton) prevButton.disabled = currentPage <= 1;
@@ -258,6 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (closeTimer) window.clearTimeout(closeTimer);
             modalBackdrop.hidden = false;
             document.body.style.overflow = 'hidden';
+            syncPdfFrame();
             syncPageLabel();
             window.requestAnimationFrame(function () {
                 modalBackdrop.classList.add('is-open');
@@ -287,6 +341,12 @@ document.addEventListener('DOMContentLoaded', function () {
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' && !modalBackdrop.hidden) {
                 closeModal();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (!modalBackdrop.hidden) {
+                syncPdfFrame();
             }
         });
 
