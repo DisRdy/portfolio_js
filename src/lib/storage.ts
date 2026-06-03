@@ -84,6 +84,7 @@ export async function deleteStoredFile(env: Env, storedValue: string | null | un
 export async function storedFileResponse(env: Env, storedValue: string | null | undefined, options: {
   cacheControl?: string;
   contentDisposition?: string;
+  contentType?: string;
 } = {}): Promise<Response> {
   const key = extractStorageKey(storedValue);
   if (!key) {
@@ -97,6 +98,9 @@ export async function storedFileResponse(env: Env, storedValue: string | null | 
 
   const headers = new Headers();
   object.writeHttpMetadata(headers);
+  if (options.contentType) {
+    headers.set("Content-Type", options.contentType);
+  }
   headers.set("Content-Length", String(object.size));
   headers.set("ETag", object.httpEtag);
   headers.set("Cache-Control", options.cacheControl ?? object.httpMetadata?.cacheControl ?? "public, max-age=3600");

@@ -14,6 +14,9 @@ import {
   storageUrl,
   truncate,
 } from "../lib/utils";
+import { renderProjectModal, type ProjectPreviewMetric } from "./projectModal";
+
+const SITE_FOOTER_TEXT = "Built by Dr &copy; 2025 &mdash; All rights reserved.";
 
 function publicNavbar(active: "home" | "projects" | "blog" | "comments"): string {
   return `<nav class="kof-navbar">
@@ -91,13 +94,14 @@ function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: 
 
 <header class="admin-topbar"></header>`;}
 
-function footer(text: string): string {
-  return `<footer>
+function footer(text = SITE_FOOTER_TEXT, className = ""): string {
+  const classAttribute = className ? ` class="${escapeAttribute(className)}"` : "";
+  return `<footer${classAttribute}>
         <p>${text}</p>
     </footer>`;
 }
 
-function publicLayout(title: string, active: "home" | "projects" | "blog" | "comments", body: string, footerText: string): string {
+function publicLayout(title: string, active: "home" | "projects" | "blog" | "comments", body: string, footerText = SITE_FOOTER_TEXT): string {
   return htmlDocument(title, `${publicNavbar(active)}${body}${footer(footerText)}`);
 }
 
@@ -181,7 +185,7 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
     ["Operations Driver", "FinExpress", "2021 - 2024"],
   ];
 
-  const projectCards = projects.length > 0 ? projects.slice(0, 3).map((project) => `<a href="/project/${project.id}/download" class="home-mini-card">
+  const projectCards = projects.length > 0 ? projects.slice(0, 3).map((project) => `<a href="/project/${project.id}" class="home-mini-card">
         <span class="home-card-external material-symbols-outlined">open_in_new</span>
         <span class="home-project-icon material-symbols-outlined">rocket_launch</span>
         <strong>${escapeHtml(project.title)}</strong>
@@ -284,7 +288,7 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
         </section>
     </main>
 
-    ${footer("&copy; 2025 Dr")}`,
+    ${footer()}`,
     "portfolio-home",
   );
 }
@@ -371,7 +375,7 @@ export function renderCommentsPage(options: {
         </section>
     </main>
 
-    ${footer("&copy; 2025 Dr")}`,
+    ${footer()}`,
     "comments-page",
   );
 }
@@ -428,9 +432,7 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
             </form>
         </section>
 
-        <footer class="login-footer">
-            <p>&copy; 2025 DR. Precision Engineered.</p>
-        </footer>
+        ${footer(SITE_FOOTER_TEXT, "login-footer")}
     </main>
 
     <aside class="login-rail" aria-hidden="true">
@@ -489,73 +491,29 @@ export function renderRegisterPage(flash: FlashData, csrfToken: string): string 
                 Already have an account? <a href="/login" class="link">Login here</a>
             </p>
         </section>
-    </div>`,
+    </div>
+
+    ${footer()}`,
   );
 }
 
 function publicProjectCard(project: Project): string {
-  return `<a href="/project/${project.id}/download" class="project-card">
+  return `<article class="project-card">
         <span class="project-card-external material-symbols-outlined">open_in_new</span>
-        <span class="project-icon material-symbols-outlined">folder_open</span>
+        <span class="project-icon material-symbols-outlined">picture_as_pdf</span>
         <strong>${escapeHtml(project.title)}</strong>
         <small>${escapeHtml(projectCategoryLabel(project.category))}</small>
-        ${project.description ? `<p>${escapeHtml(truncate(project.description, 150))}</p>` : `<p>Project file siap diunduh dari portfolio collection.</p>`}
+        ${project.description ? `<p>${escapeHtml(truncate(project.description, 150))}</p>` : `<p>Project PDF siap dibuka langsung dari portfolio collection.</p>`}
         <span class="project-file">
             <span>${escapeHtml(project.originalFilename)}</span>
             <em>${escapeHtml(formatKilobytes(project.fileSize))} KB</em>
         </span>
+        <a href="/project/${project.id}" class="project-view-button">View Project</a>
         <time>${escapeHtml(formatDateLong(project.createdAt))}</time>
-    </a>`;
+    </article>`;
 }
 
-export function renderProjectsPage(projects: Project[], selectedCategory: string | null): string {
-  const groupedProjects = new Map<string, Project[]>();
-  for (const project of projects) {
-    const list = groupedProjects.get(project.category) ?? [];
-    list.push(project);
-    groupedProjects.set(project.category, list);
-  }
-
-  let content = "";
-  if (projects.length === 0) {
-    content = `<div class="projects-empty">
-                    <p>${selectedCategory
-      ? `Belum ada proyek dalam kategori <strong>${escapeHtml(projectCategoryLabel(selectedCategory))}</strong>.`
-      : "Belum ada proyek yang diupload."}</p>
-                </div>`;
-  } else if (selectedCategory) {
-    content = `<section class="project-category-section">
-                        <div class="project-category-heading">
-                            <h2>${escapeHtml(projectCategoryLabel(selectedCategory))}</h2>
-                            <span>${projects.length} project</span>
-                        </div>
-                        <div class="projects-grid">
-                            ${projects.map(publicProjectCard).join("")}
-                        </div>
-                    </section>`;
-  } else {
-    content = PROJECT_CATEGORY_OPTIONS.map(([key, label]) => {
-      const group = groupedProjects.get(key);
-      if (!group?.length) {
-        return "";
-      }
-
-      return `<section class="project-category-section">
-                <div class="project-category-heading">
-                    <h2>${escapeHtml(label)}</h2>
-                    <span>${group.length} project</span>
-                </div>
-                <div class="projects-grid">
-                    ${group.map(publicProjectCard).join("")}
-                </div>
-            </section>`;
-    }).join("");
-  }
-
-  if (!content.trim()) {
-    content = `<div class="projects-empty"><p>Belum ada proyek yang cocok dengan kategori portfolio saat ini.</p></div>`;
-  }
-
+export function renderProjectsPage(selectedCategory: string | null): string {
   return htmlDocument(
     "Projects",
     `${publicNavbar("projects")}
@@ -578,11 +536,55 @@ export function renderProjectsPage(projects: Project[], selectedCategory: string
                 </nav>
             </div>
 
-            ${content}
+            <div class="projects-content" data-project-list data-selected-category="${escapeAttribute(selectedCategory ?? "")}">
+                <div class="projects-loading">
+                    <span class="material-symbols-outlined">hourglass_empty</span>
+                    <p>Loading projects...</p>
+                </div>
+            </div>
         </section>
     </main>
 
-    ${footer("&copy; 2025 Dr")}`,
+    ${footer()}`,
+    "projects-page",
+  );
+}
+
+export function renderProjectViewerPage(project: Project): string {
+  const metrics: ProjectPreviewMetric[] = [
+    { label: "Category", value: projectCategoryLabel(project.category) },
+    { label: "Size", value: `${formatKilobytes(project.fileSize)} KB` },
+    { label: "Uploaded", value: formatDateShort(project.createdAt) },
+  ];
+
+  return htmlDocument(
+    `${project.title} - Project`,
+    `${publicNavbar("projects")}
+
+    <main class="projects-shell project-viewer-shell">
+        <header class="project-viewer-header">
+            <a href="/projects" class="project-back-link">&lt; Back to projects</a>
+            <div class="project-kicker">
+                <span>${escapeHtml(projectCategoryLabel(project.category))}</span>
+                <time datetime="${escapeAttribute(project.createdAt ?? "")}">${escapeHtml(formatDateBlog(project.createdAt))}</time>
+            </div>
+            <h1>${escapeHtml(project.title)}</h1>
+            ${project.description ? `<p>${escapeHtml(project.description)}</p>` : ""}
+        </header>
+
+        ${renderProjectModal({
+      fileUrl: `/project/${project.id}/file`,
+      fileName: project.originalFilename,
+      fileSize: formatKilobytes(project.fileSize),
+      title: project.title,
+      description: project.description,
+      category: projectCategoryLabel(project.category),
+      metrics,
+      totalPages: 1,
+    })}
+    </main>
+
+    ${footer()}`,
     "projects-page",
   );
 }
@@ -718,7 +720,7 @@ export function renderDashboardPage(summary: DashboardSummary, csrfToken: string
         </div>
     </div>
 
-    ${footer("&copy; 2025 Dr")}`,
+    ${footer()}`,
     "admin-page",
   );
 }
@@ -832,8 +834,8 @@ export function renderDashboardProjectsPage(options: {
                 </div>
 
                 <div>
-                    <label class="form-group-label">File (Max 10MB)</label>
-                    <input type="file" name="file" class="form-input" required>
+                    <label class="form-group-label">PDF File (Max 10MB)</label>
+                    <input type="file" name="file" class="form-input" accept="application/pdf,.pdf" required>
                     ${renderValidationError(errors, "file")}
                 </div>
 
@@ -879,8 +881,8 @@ export function renderDashboardProjectsPage(options: {
                 </div>
 
                 <div>
-                    <label class="form-group-label">Ganti File (Opsional)</label>
-                    <input type="file" name="file" class="form-input">
+                    <label class="form-group-label">Ganti PDF (Opsional)</label>
+                    <input type="file" name="file" class="form-input" accept="application/pdf,.pdf">
                     <small class="form-help-text">Kosongkan jika tidak ingin mengganti file</small>
                 </div>
 
@@ -907,7 +909,9 @@ export function renderDashboardProjectsPage(options: {
                 </form>
             </div>
         </div>
-    </div>`,
+    </div>
+
+    ${footer()}`,
     "admin-page",
   );
 }
@@ -946,7 +950,7 @@ export function renderBlogIndexPage(blogs: Blog[]): string {
         </section>
     </main>
 
-    ${footer(`&copy; ${new Date().getUTCFullYear()} Dr`)}`,
+    ${footer()}`,
     "blog-page",
   );
 }
@@ -991,7 +995,7 @@ export function renderBlogShowPage(blog: Blog): string {
         </article>
     </main>
 
-    ${footer(`&copy; ${new Date().getUTCFullYear()} Dr`)}`,
+    ${footer()}`,
     "blog-page",
   );
 }
@@ -1067,7 +1071,9 @@ export function renderDashboardBlogsPage(options: {
                 </form>
             </div>
         </div>
-    </div>`,
+    </div>
+
+    ${footer()}`,
     "admin-page",
   );
 }
@@ -1214,7 +1220,9 @@ export function renderDashboardBlogFormPage(options: {
                 </div>
             </form>
         </div>
-    </div>`,
+    </div>
+
+    ${footer()}`,
     "admin-page",
   );
 }
@@ -1228,6 +1236,8 @@ export function renderErrorPage(title: string, message: string, status: number):
             <p>${escapeHtml(message)}</p>
             <p>Status: ${status}</p>
         </section>
-    </div>`,
+    </div>
+
+    ${footer()}`,
   );
 }

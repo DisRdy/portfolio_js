@@ -114,6 +114,199 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    const escapeHtml = function (value) {
+        return String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    };
+
+    const projectCategoryLabels = {
+        website: 'Website',
+        'data-analytics': 'Data & Analytics',
+    };
+
+    const projectCategoryLabel = function (category) {
+        return projectCategoryLabels[category] || 'Website';
+    };
+
+    const formatKilobytes = function (bytes) {
+        const kb = Number(bytes || 0) / 1024;
+        return kb.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    };
+
+    const formatProjectDate = function (value) {
+        if (!value) return '-';
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return '-';
+        return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+        }).format(date);
+    };
+
+    const projectCardHtml = function (project) {
+        const description = project.description
+            ? escapeHtml(project.description)
+            : 'Project PDF siap dibuka langsung dari portfolio collection.';
+
+        return `<article class="project-card">
+            <span class="project-card-external material-symbols-outlined">open_in_new</span>
+            <span class="project-icon material-symbols-outlined">picture_as_pdf</span>
+            <strong>${escapeHtml(project.title)}</strong>
+            <small>${escapeHtml(projectCategoryLabel(project.category))}</small>
+            <p>${description}</p>
+            <span class="project-file">
+                <span>${escapeHtml(project.originalFilename)}</span>
+                <em>${escapeHtml(formatKilobytes(project.fileSize))} KB</em>
+            </span>
+            <a href="${escapeHtml(project.viewerUrl)}" class="project-view-button">View Project</a>
+            <time>${escapeHtml(formatProjectDate(project.createdAt))}</time>
+        </article>`;
+    };
+
+    const renderProjectSection = function (title, projects) {
+        return `<section class="project-category-section">
+            <div class="project-category-heading">
+                <h2>${escapeHtml(title)}</h2>
+                <span>${projects.length} project${projects.length === 1 ? '' : 's'}</span>
+            </div>
+            <div class="projects-grid">${projects.map(projectCardHtml).join('')}</div>
+        </section>`;
+    };
+
+    const renderProjectList = function (projects, selectedCategory) {
+        if (!projects.length) {
+            const message = selectedCategory
+                ? `Belum ada proyek dalam kategori <strong>${escapeHtml(projectCategoryLabel(selectedCategory))}</strong>.`
+                : 'Belum ada proyek yang diupload.';
+            return `<div class="projects-empty"><p>${message}</p></div>`;
+        }
+
+        if (selectedCategory) {
+            return renderProjectSection(projectCategoryLabel(selectedCategory), projects);
+        }
+
+        const orderedCategories = ['website', 'data-analytics'];
+        const rendered = orderedCategories
+            .map(function (category) {
+                const group = projects.filter(function (project) {
+                    return project.category === category;
+                });
+                return group.length ? renderProjectSection(projectCategoryLabel(category), group) : '';
+            })
+            .filter(Boolean)
+            .join('');
+
+        return rendered || `<div class="projects-empty"><p>Belum ada proyek yang cocok dengan kategori portfolio saat ini.</p></div>`;
+    };
+
+    document.querySelectorAll('[data-project-list]').forEach(function (container) {
+        const selectedCategory = container.dataset.selectedCategory || '';
+        const endpoint = new URL('/api/projects', window.location.origin);
+        if (selectedCategory) endpoint.searchParams.set('category', selectedCategory);
+
+        const loadProjects = async function () {
+            container.innerHTML = `<div class="projects-loading">
+                <span class="material-symbols-outlined">hourglass_empty</span>
+                <p>Loading projects...</p>
+            </div>`;
+
+            try {
+                const response = await fetch(endpoint.toString());
+                if (!response.ok) {
+                    throw new Error('Unable to load projects.');
+                }
+
+                const payload = await response.json();
+                const projects = Array.isArray(payload.projects) ? payload.projects : [];
+                container.innerHTML = renderProjectList(projects, selectedCategory);
+            } catch (error) {
+                container.innerHTML = `<div class="projects-empty">
+                    <p>Gagal memuat project. Silakan refresh halaman.</p>
+                </div>`;
+            }
+        };
+
+        loadProjects();
+    });
+
+    document.querySelectorAll('[data-project-modal-root]').forEach(function (root) {
+        const modalBackdrop = root.querySelector('[data-project-modal]');
+        const modal = modalBackdrop ? modalBackdrop.querySelector('.project-modal') : null;
+        const openButtons = root.querySelectorAll('[data-project-modal-open]');
+        const closeButtons = root.querySelectorAll('[data-project-modal-close]');
+        const pageLabel = root.querySelector('[data-project-page-label]');
+        const prevButton = root.querySelector('[data-project-page-prev]');
+        const nextButton = root.querySelector('[data-project-page-next]');
+        const totalPages = Math.max(1, Number(root.dataset.totalPages || 1));
+        let currentPage = 1;
+        let closeTimer = null;
+
+        if (!modalBackdrop || !modal) return;
+
+        const syncPageLabel = function () {
+            if (pageLabel) pageLabel.textContent = `Halaman ${currentPage} / ${totalPages}`;
+            if (prevButton) prevButton.disabled = currentPage <= 1;
+            if (nextButton) nextButton.disabled = currentPage >= totalPages;
+        };
+
+        const openModal = function () {
+            if (closeTimer) window.clearTimeout(closeTimer);
+            modalBackdrop.hidden = false;
+            document.body.style.overflow = 'hidden';
+            syncPageLabel();
+            window.requestAnimationFrame(function () {
+                modalBackdrop.classList.add('is-open');
+            });
+        };
+
+        const closeModal = function () {
+            modalBackdrop.classList.remove('is-open');
+            document.body.style.overflow = '';
+            closeTimer = window.setTimeout(function () {
+                modalBackdrop.hidden = true;
+            }, 180);
+        };
+
+        openButtons.forEach(function (button) {
+            button.addEventListener('click', openModal);
+        });
+
+        closeButtons.forEach(function (button) {
+            button.addEventListener('click', closeModal);
+        });
+
+        modalBackdrop.addEventListener('click', function (event) {
+            if (event.target === modalBackdrop) closeModal();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !modalBackdrop.hidden) {
+                closeModal();
+            }
+        });
+
+        if (prevButton) {
+            prevButton.addEventListener('click', function () {
+                currentPage = Math.max(1, currentPage - 1);
+                syncPageLabel();
+            });
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener('click', function () {
+                currentPage = Math.min(totalPages, currentPage + 1);
+                syncPageLabel();
+            });
+        }
+
+        syncPageLabel();
+    });
+
     document.querySelectorAll('[data-block-editor]').forEach(function (editor) {
         const target = document.getElementById(editor.dataset.target);
         const list = editor.querySelector('.block-editor-list');

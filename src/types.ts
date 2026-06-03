@@ -62,6 +62,31 @@ export interface Project {
   updatedAt: string | null;
 }
 
+export interface ProjectApiResource {
+  id: number;
+  title: string;
+  description: string | null;
+  category: string;
+  originalFilename: string;
+  fileSize: number;
+  createdAt: string | null;
+  viewerUrl: string;
+  fileUrl: string;
+}
+
+export interface ProjectListApiResponse {
+  projects: ProjectApiResource[];
+}
+
+export interface ProjectUploadApiResponse {
+  project: ProjectApiResource;
+}
+
+export interface ApiErrorResponse {
+  error: string;
+  errors?: Record<string, string>;
+}
+
 export interface Comment {
   id: number;
   name: string;

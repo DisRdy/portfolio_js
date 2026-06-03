@@ -253,9 +253,9 @@ export async function createProject(env: Env, data: {
   filePath: string;
   originalFilename: string;
   fileSize: number;
-}): Promise<void> {
+}): Promise<Project> {
   const now = sqlNow();
-  await env.DB.prepare(
+  const result = await env.DB.prepare(
     `INSERT INTO projects
       (user_id, title, description, category, file_path, original_filename, file_size, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -270,6 +270,13 @@ export async function createProject(env: Env, data: {
     now,
     now,
   ).run();
+
+  const project = await findProjectById(env, Number(result.meta?.last_row_id ?? 0));
+  if (!project) {
+    throw new Error("Created project could not be loaded.");
+  }
+
+  return project;
 }
 
 export async function updateProject(env: Env, project: Project): Promise<void> {

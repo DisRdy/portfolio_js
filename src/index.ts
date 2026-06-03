@@ -60,7 +60,20 @@ import {
   verifyCsrfToken,
 } from "./lib/session";
 import { ensureSchema } from "./lib/schema";
-import type { Blog, BlogContentBlock, BlogContentBlockType, Env, FlashData, Project, SessionState, User } from "./types";
+import type {
+  ApiErrorResponse,
+  Blog,
+  BlogContentBlock,
+  BlogContentBlockType,
+  Env,
+  FlashData,
+  Project,
+  ProjectApiResource,
+  ProjectListApiResponse,
+  ProjectUploadApiResponse,
+  SessionState,
+  User,
+} from "./types";
 import {
   renderBlogIndexPage,
   renderBlogShowPage,
@@ -73,17 +86,21 @@ import {
   renderHomePage,
   renderLoginPage,
   renderProjectsPage,
+  renderProjectViewerPage,
   renderRegisterPage,
 } from "./views/pages";
 
 const PROJECT_CATEGORIES = ["website", "data-analytics"] as const;
-const PUBLIC_PROJECT_FILTERS = PROJECT_CATEGORIES;
 const BLOG_STATUSES = ["draft", "published"] as const;
 const BLOG_BLOCK_TYPES = ["paragraph", "heading", "blockquote", "code", "image"] as const satisfies readonly BlogContentBlockType[];
 const BLOG_FORM_OLD_INPUT_KEYS = ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"];
 const MAX_FORM_BODY_BYTES = 12 * 1024 * 1024;
 
 class PayloadTooLargeError extends Error {}
+
+function isProjectCategory(value: string): value is typeof PROJECT_CATEGORIES[number] {
+  return (PROJECT_CATEGORIES as readonly string[]).includes(value);
+}
 
 function html(content: string, status = 200, headers?: HeadersInit): Response {
   return new Response(content, {
@@ -93,6 +110,21 @@ function html(content: string, status = 200, headers?: HeadersInit): Response {
       ...headers,
     },
   });
+}
+
+function json<T>(data: T, status = 200, headers?: HeadersInit): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      ...headers,
+    },
+  });
+}
+
+function apiError(message: string, status: number, errors?: Record<string, string>): Response {
+  const body: ApiErrorResponse = errors ? { error: message, errors } : { error: message };
+  return json(body, status);
 }
 
 function text(content: string, status = 200, headers?: HeadersInit): Response {
@@ -315,10 +347,15 @@ function isImageFile(file: File): boolean {
   return /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i.test(file.name);
 }
 
+function isPdfFile(file: File): boolean {
+  return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+}
+
 function validateFile(file: File | null, field: string, errors: Record<string, string>, options: {
   required?: boolean;
   maxKb: number;
   image?: boolean;
+  pdf?: boolean;
 }): File | null {
   if (!file) {
     if (options.required) {
@@ -329,6 +366,10 @@ function validateFile(file: File | null, field: string, errors: Record<string, s
 
   if (options.image && !isImageFile(file)) {
     errors[field] = `The ${field.replaceAll("_", " ")} field must be an image.`;
+  }
+
+  if (options.pdf && !isPdfFile(file)) {
+    errors[field] = `The ${field.replaceAll("_", " ")} field must be a PDF.`;
   }
 
   if (file.size > options.maxKb * 1024) {
@@ -391,6 +432,20 @@ function setValidationFlash(session: SessionState, location: string, errors: Rec
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+function projectResource(project: Project): ProjectApiResource {
+  return {
+    id: project.id,
+    title: project.title,
+    description: project.description,
+    category: project.category,
+    originalFilename: project.originalFilename,
+    fileSize: project.fileSize,
+    createdAt: project.createdAt,
+    viewerUrl: `/project/${project.id}`,
+    fileUrl: `/project/${project.id}/file`,
+  };
 }
 
 function setBlogFormFailure(session: SessionState, location: string, formData: FormData | null, message: string): Response {
@@ -538,7 +593,7 @@ async function handleProjectCreate(env: Env, formData: FormData | null, session:
   const title = validateRequiredText(formString(formData, "title"), "title", errors, { max: 255 });
   const description = validateOptionalText(formString(formData, "description"), "description", errors, { max: 1000 });
   const category = validateChoice(formString(formData, "category"), "category", PROJECT_CATEGORIES, errors);
-  const file = validateFile(formFile(formData, "file"), "file", errors, { required: true, maxKb: 10240 });
+  const file = validateFile(formFile(formData, "file"), "file", errors, { required: true, maxKb: 10240, pdf: true });
 
   if (Object.keys(errors).length > 0) {
     return setValidationFlash(session, "/dashboard/projects", errors, oldInputs(formData, ["title", "description", "category"]));
@@ -565,6 +620,61 @@ async function handleProjectCreate(env: Env, formData: FormData | null, session:
   }
 }
 
+async function handleApiProjectsIndex(env: Env, request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const category = url.searchParams.get("category") ?? "";
+  const selectedCategory = isProjectCategory(category)
+    ? category
+    : undefined;
+  const projects = await listProjectsForPublic(env, selectedCategory);
+  const response: ProjectListApiResponse = {
+    projects: projects.map(projectResource),
+  };
+  return json(response);
+}
+
+async function handleApiProjectCreate(env: Env, formData: FormData | null, user: User | null): Promise<Response> {
+  if (!user) {
+    return apiError("Authentication required.", 401);
+  }
+
+  const errors: Record<string, string> = {};
+  const title = validateRequiredText(formString(formData, "title"), "title", errors, { max: 255 });
+  const description = validateOptionalText(formString(formData, "description"), "description", errors, { max: 1000 });
+  const category = validateChoice(formString(formData, "category"), "category", PROJECT_CATEGORIES, errors);
+  const file = validateFile(formFile(formData, "file"), "file", errors, { required: true, maxKb: 10240, pdf: true });
+
+  if (Object.keys(errors).length > 0) {
+    return apiError("Validation failed.", 422, errors);
+  }
+
+  let uploadedPath: string | null = null;
+  try {
+    const key = buildProjectStorageKey(category!, file!.name);
+    const uploaded = await uploadPublicFile(env, key, file!);
+    uploadedPath = uploaded.publicUrl;
+    const project = await createProject(env, {
+      userId: user.id,
+      title,
+      description,
+      category: category!,
+      filePath: uploaded.publicUrl,
+      originalFilename: file!.name,
+      fileSize: file!.size,
+    });
+
+    const response: ProjectUploadApiResponse = {
+      project: projectResource(project),
+    };
+    return json(response, 201);
+  } catch (error) {
+    if (uploadedPath) {
+      await deleteStoredFile(env, uploadedPath).catch(() => undefined);
+    }
+    return apiError(`Gagal mengupload project: ${errorMessage(error)}`, 500);
+  }
+}
+
 async function handleProjectUpdate(env: Env, formData: FormData | null, session: SessionState, user: User, projectId: number): Promise<Response> {
   const project = await findProjectById(env, projectId);
   if (!project) {
@@ -580,7 +690,7 @@ async function handleProjectUpdate(env: Env, formData: FormData | null, session:
   const title = validateRequiredText(formString(formData, "title"), "title", errors, { max: 255 });
   const description = validateOptionalText(formString(formData, "description"), "description", errors, { max: 1000 });
   const category = validateChoice(formString(formData, "category"), "category", PROJECT_CATEGORIES, errors);
-  const file = validateFile(formFile(formData, "file"), "file", errors, { required: false, maxKb: 10240 });
+  const file = validateFile(formFile(formData, "file"), "file", errors, { required: false, maxKb: 10240, pdf: true });
 
   if (Object.keys(errors).length > 0) {
     return setValidationFlash(session, "/dashboard/projects", errors, oldInputs(formData, ["title", "description", "category"]));
@@ -778,7 +888,18 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
   const path = url.pathname;
 
   if (method !== "GET" && method !== "HEAD" && !validateCsrf(session, formData)) {
+    if (path.startsWith("/api/")) {
+      return apiError("Page expired. Refresh and try again.", 419);
+    }
     return pageExpired();
+  }
+
+  if (method === "GET" && path === "/api/projects") {
+    return handleApiProjectsIndex(env, request);
+  }
+
+  if (method === "POST" && path === "/api/projects") {
+    return handleApiProjectCreate(env, formData, user);
   }
 
   if (method === "GET" && path === "/") {
@@ -791,9 +912,8 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
 
   if (method === "GET" && path === "/projects") {
     const category = url.searchParams.get("category");
-    const selectedCategory = category && PUBLIC_PROJECT_FILTERS.includes(category as (typeof PUBLIC_PROJECT_FILTERS)[number]) ? category : null;
-    const projects = await listProjectsForPublic(env, selectedCategory ?? undefined);
-    return html(renderProjectsPage(projects, selectedCategory));
+    const selectedCategory = category && isProjectCategory(category) ? category : null;
+    return html(renderProjectsPage(selectedCategory));
   }
 
   if (method === "GET" && path === "/comments") {
@@ -970,6 +1090,27 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
   if (publicBlogMatch && method === "GET") {
     const blog = await findPublishedBlogBySlug(env, decodeURIComponent(publicBlogMatch[1]));
     return blog ? html(renderBlogShowPage(blog)) : notFound();
+  }
+
+  const projectViewerMatch = path.match(/^\/project\/(\d+)$/);
+  if (projectViewerMatch && method === "GET") {
+    const project = await findProjectById(env, Number(projectViewerMatch[1]));
+    return project ? html(renderProjectViewerPage(project)) : notFound();
+  }
+
+  const projectFileMatch = path.match(/^\/project\/(\d+)\/file$/);
+  if (projectFileMatch && method === "GET") {
+    const project = await findProjectById(env, Number(projectFileMatch[1]));
+    if (!project) {
+      return notFound();
+    }
+
+    const response = await storedFileResponse(env, project.filePath, {
+      cacheControl: "public, max-age=3600",
+      contentDisposition: `inline; filename="${project.originalFilename.replaceAll('"', "")}"`,
+      contentType: "application/pdf",
+    });
+    return response.status === 404 ? notFound() : response;
   }
 
   const downloadMatch = path.match(/^\/project\/(\d+)\/download$/);
