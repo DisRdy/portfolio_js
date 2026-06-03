@@ -104,7 +104,7 @@
 | `GET /projects` | route closure | Worker HTML handler with D1 query |
 | `GET /comments` | `CommentController@index` | Worker HTML handler with D1 query |
 | `POST /comments` | `CommentController@store` | Worker form handler + D1 + cache-based rate limit |
-| `GET /project/{id}/download` | route closure | Worker download handler + Supabase object fetch |
+| `GET /project/{id}/download` | route closure | Worker download handler + R2 object fetch |
 | `GET /fix-storage` | route closure | Worker compatibility no-op |
 | `GET /login` | route closure | Worker guest page |
 | `POST /login` | `AuthController@login` | Worker auth handler + database session |
@@ -112,21 +112,21 @@
 | `POST /register` | `AuthController@register` | Worker auth handler + bcrypt + database session |
 | `GET /dashboard` | `DashboardController@index` | Worker auth page + D1 summary queries |
 | `GET /dashboard/projects` | `Dashboard\ProjectController@index` | Worker auth page |
-| `POST /dashboard/projects` | `Dashboard\ProjectController@store` | Worker auth handler + Supabase upload + D1 insert |
-| `PUT /dashboard/projects/{id}` | `Dashboard\ProjectController@update` | Worker auth handler + optional Supabase replace + D1 update |
-| `DELETE /dashboard/projects/{id}` | `Dashboard\ProjectController@destroy` | Worker auth handler + Supabase delete + D1 delete |
+| `POST /dashboard/projects` | `Dashboard\ProjectController@store` | Worker auth handler + R2 upload + D1 insert |
+| `PUT /dashboard/projects/{id}` | `Dashboard\ProjectController@update` | Worker auth handler + optional R2 replace + D1 update |
+| `DELETE /dashboard/projects/{id}` | `Dashboard\ProjectController@destroy` | Worker auth handler + R2 delete + D1 delete |
 | `POST /logout` | route closure | Worker auth handler + session reset |
 | `GET /dashboard/blogs` | `Dashboard\BlogController@index` | Worker auth page |
-| `POST /dashboard/blogs` | `Dashboard\BlogController@store` | Worker auth handler + optional Supabase upload + D1 insert |
+| `POST /dashboard/blogs` | `Dashboard\BlogController@store` | Worker auth handler + optional R2 upload + D1 insert |
 | `GET /dashboard/blogs/create` | `Dashboard\BlogController@create` | Worker auth redirect to index |
 | `GET /dashboard/blogs/{blog}` | resource route to missing method | Worker compatibility route returning `404` |
-| `PUT/PATCH /dashboard/blogs/{blog}` | `Dashboard\BlogController@update` | Worker auth handler + optional Supabase replace + D1 update |
-| `DELETE /dashboard/blogs/{blog}` | `Dashboard\BlogController@destroy` | Worker auth handler + optional Supabase delete + D1 delete |
+| `PUT/PATCH /dashboard/blogs/{blog}` | `Dashboard\BlogController@update` | Worker auth handler + optional R2 replace + D1 update |
+| `DELETE /dashboard/blogs/{blog}` | `Dashboard\BlogController@destroy` | Worker auth handler + optional R2 delete + D1 delete |
 | `GET /dashboard/blogs/{blog}/edit` | `Dashboard\BlogController@edit` | Worker auth redirect to index after ownership check |
 | `GET /git-test` | route closure | Worker text response |
 | `GET /blog` | `PublicBlogController@index` | Worker HTML handler |
 | `GET /blog/{slug}` | `PublicBlogController@show` | Worker HTML handler |
-| `GET /storage/*` | public storage symlink | Worker Supabase object proxy |
+| `GET /storage/*` | public storage symlink | Worker R2 object proxy |
 
 ## Auth Mapping
 
@@ -170,7 +170,7 @@
 - Laravel routes -> explicit route handling in `src/index.ts`.
 - Eloquent -> prepared-statement repository functions in `src/repositories/data.ts`.
 - Blade -> server-rendered HTML string views in `src/views/pages.ts`.
-- Local filesystem -> Supabase Storage bucket `portfolio`.
+- Local filesystem -> Cloudflare R2 bucket `portfolio`.
 - SQLite -> Cloudflare D1 binding `DB`.
 - Laravel database sessions -> D1-backed session records with serialized flash/CSRF payload.
 - Security headers middleware -> Worker response hardening in `src/index.ts`.

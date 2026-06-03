@@ -69,6 +69,27 @@ document.addEventListener('DOMContentLoaded', function () {
         textarea.remove();
     };
 
+    document.querySelectorAll('[data-password-toggle]').forEach(function (button) {
+        const inputId = button.getAttribute('aria-controls');
+        const input = inputId ? document.getElementById(inputId) : null;
+        const icon = button.querySelector('.material-symbols-outlined');
+
+        if (!input) return;
+
+        const setPasswordVisible = function (isVisible) {
+            input.type = isVisible ? 'text' : 'password';
+            button.setAttribute('aria-pressed', String(isVisible));
+            button.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
+            button.setAttribute('title', isVisible ? 'Hide password' : 'Show password');
+            if (icon) icon.textContent = isVisible ? 'visibility_off' : 'visibility';
+        };
+
+        button.addEventListener('click', function () {
+            setPasswordVisible(input.type === 'password');
+            input.focus({ preventScroll: true });
+        });
+    });
+
     document.querySelectorAll('[data-share-article]').forEach(function (button) {
         button.addEventListener('click', async function () {
             const shareData = {

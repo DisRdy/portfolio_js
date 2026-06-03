@@ -4,7 +4,7 @@
 
 - Node.js 18+ recommended.
 - A Cloudflare account with Workers and D1 enabled.
-- A Supabase project with a public Storage bucket named `portfolio`.
+- A Cloudflare R2 bucket named `portfolio`.
 - Wrangler installed through project dependencies after `npm install`.
 
 ## 1. Install dependencies
@@ -22,32 +22,28 @@ npx wrangler d1 create portfolio-db
 - Copy the returned `database_id` into [wrangler.toml](/c:/laragon/www/portfolio/wrangler.toml).
 - Keep `binding = "DB"` so the Worker code continues to use `env.DB`.
 
-## 3. Configure Supabase Storage
+## 3. Configure Cloudflare R2 Storage
 
-- Use the existing public bucket name `portfolio`.
+- Create an R2 bucket named `portfolio`:
+
+```bash
+npx wrangler r2 bucket create portfolio
+```
+
+- Keep the `STORAGE` binding in [wrangler.toml](/c:/laragon/www/portfolio/wrangler.toml).
 - The Worker uploads project files under `projects/...` and blog images under `blogs/...`.
-- If you are using only `SUPABASE_ANON_KEY`, create Storage policies that allow the Worker to insert and delete objects in the `portfolio` bucket.
 
-## 4. Configure Worker secrets and local vars
+## 4. Configure local vars
 
 ### Local development
 - Copy [`.dev.vars.example`](/c:/laragon/www/portfolio/.dev.vars.example) to `.dev.vars`.
 - Set:
-  - `SUPABASE_URL`
-  - `SUPABASE_ANON_KEY`
   - `APP_URL`
   - `APP_DEBUG`
   - `SESSION_COOKIE_NAME`
   - `SESSION_TTL_MINUTES`
   - `COMMENTS_RATE_LIMIT_MAX`
   - `COMMENTS_RATE_LIMIT_WINDOW_SECONDS`
-
-### Remote deployment secrets
-
-```bash
-npx wrangler secret put SUPABASE_URL
-npx wrangler secret put SUPABASE_ANON_KEY
-```
 
 ## 5. Apply D1 migrations locally
 
@@ -68,11 +64,11 @@ npm run d1:migrate:remote
 - Import it into D1 with Wrangler SQL execution or your preferred migration pipeline.
 
 ### File data
-- Upload the existing objects into the Supabase `portfolio` bucket using the same logical keys:
+- Upload the existing objects into the R2 `portfolio` bucket using the same logical keys:
   - `projects/...`
   - `blogs/...`
-- Existing rows that still store relative keys continue to work through the Worker compatibility routes.
-- New uploads are stored as full public Supabase URLs in D1.
+- Existing rows that still store relative keys or legacy Supabase public URLs continue to work if the matching object key exists in R2.
+- New uploads are stored as `/storage/...` Worker URLs in D1.
 
 ## 8. Local development
 
@@ -82,7 +78,7 @@ npm run dev
 
 - Wrangler will serve the Worker locally.
 - Static files are served from `public/`.
-- Dynamic pages, auth, D1 access, and Supabase-backed file routes are handled by [src/index.ts](/c:/laragon/www/portfolio/src/index.ts).
+- Dynamic pages, auth, D1 access, and R2-backed file routes are handled by [src/index.ts](/c:/laragon/www/portfolio/src/index.ts).
 
 ## 9. Deploy to Cloudflare Workers
 
@@ -103,8 +99,7 @@ npx wrangler d1 execute DB --remote --command "SELECT * FROM users;"
 
 - `DB`: D1 database binding.
 - `ASSETS`: Workers static asset binding for `public/`.
-- `SUPABASE_URL`: Supabase project URL secret.
-- `SUPABASE_ANON_KEY`: Supabase key used for Storage API calls.
+- `STORAGE`: R2 bucket binding for uploaded files.
 
 ## Files to Review Before Deploy
 
@@ -118,6 +113,5 @@ npx wrangler d1 execute DB --remote --command "SELECT * FROM users;"
 
 - D1 getting started: https://developers.cloudflare.com/d1/get-started/
 - Wrangler configuration: https://developers.cloudflare.com/workers/wrangler/configuration/
-- Supabase JS install: https://supabase.com/docs/reference/javascript/installing
-- Supabase Storage uploads: https://supabase.com/docs/guides/storage/uploads/standard-uploads
-- Supabase Storage serving assets: https://supabase.com/docs/guides/storage/serving/downloads
+- R2 Workers API: https://developers.cloudflare.com/r2/get-started/workers-api/
+- R2 pricing: https://developers.cloudflare.com/r2/pricing/

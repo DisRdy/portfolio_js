@@ -45,7 +45,7 @@ import {
 import {
   deleteStoredFile,
   proxyStorageObject,
-  resolveStoredStorageUrl,
+  storedFileResponse,
   uploadPublicFile,
 } from "./lib/storage";
 import {
@@ -80,6 +80,7 @@ const PROJECT_CATEGORIES = ["website", "data-analytics"] as const;
 const PUBLIC_PROJECT_FILTERS = PROJECT_CATEGORIES;
 const BLOG_STATUSES = ["draft", "published"] as const;
 const BLOG_BLOCK_TYPES = ["paragraph", "heading", "blockquote", "code", "image"] as const satisfies readonly BlogContentBlockType[];
+const BLOG_FORM_OLD_INPUT_KEYS = ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"];
 const MAX_FORM_BODY_BYTES = 12 * 1024 * 1024;
 
 class PayloadTooLargeError extends Error {}
@@ -388,6 +389,18 @@ function setValidationFlash(session: SessionState, location: string, errors: Rec
   return redirect(location);
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
+function setBlogFormFailure(session: SessionState, location: string, formData: FormData | null, message: string): Response {
+  setFlash(session, {
+    error: message,
+    old: oldInputs(formData, BLOG_FORM_OLD_INPUT_KEYS),
+  });
+  return redirect(location);
+}
+
 async function handleLogin(env: Env, formData: FormData | null, session: SessionState, request: Request): Promise<Response> {
   const errors: Record<string, string> = {};
   const email = validateRequiredText(formString(formData, "email"), "email", errors, { email: true });
@@ -636,7 +649,7 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
   if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, "/dashboard/blogs/create", errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
+    return setValidationFlash(session, "/dashboard/blogs/create", errors, oldInputs(formData, BLOG_FORM_OLD_INPUT_KEYS));
   }
 
   let slug = slugify(title);
@@ -645,28 +658,35 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
   }
 
   let imagePath: string | null = null;
-  if (image) {
-    const key = buildBlogStorageKey(image.name);
-    imagePath = (await uploadPublicFile(env, key, image)).publicUrl;
+  try {
+    if (image) {
+      const key = buildBlogStorageKey(image.name);
+      imagePath = (await uploadPublicFile(env, key, image)).publicUrl;
+    }
+
+    await createBlog(env, {
+      userId: user.id,
+      title,
+      subtitle,
+      category,
+      tags,
+      image: imagePath,
+      imageCaption,
+      slug,
+      content,
+      contentBlocks,
+      status: status!,
+      publishedAt: status === "published" ? (publishedAt ?? sqlNow()) : null,
+    });
+
+    setFlash(session, { success: "Blog created successfully." });
+    return redirect("/dashboard/blogs");
+  } catch (error) {
+    if (imagePath) {
+      await deleteStoredFile(env, imagePath).catch(() => undefined);
+    }
+    return setBlogFormFailure(session, "/dashboard/blogs/create", formData, `Gagal menyimpan blog: ${errorMessage(error)}`);
   }
-
-  await createBlog(env, {
-    userId: user.id,
-    title,
-    subtitle,
-    category,
-    tags,
-    image: imagePath,
-    imageCaption,
-    slug,
-    content,
-    contentBlocks,
-    status: status!,
-    publishedAt: status === "published" ? (publishedAt ?? sqlNow()) : null,
-  });
-
-  setFlash(session, { success: "Blog created successfully." });
-  return redirect("/dashboard/blogs");
 }
 
 async function handleBlogUpdate(env: Env, formData: FormData | null, session: SessionState, user: User, blogId: number): Promise<Response> {
@@ -692,30 +712,43 @@ async function handleBlogUpdate(env: Env, formData: FormData | null, session: Se
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
   if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, `/dashboard/blogs/${blog.id}/edit`, errors, oldInputs(formData, ["title", "subtitle", "category", "tags", "image_caption", "content_blocks", "status", "published_at"]));
+    return setValidationFlash(session, `/dashboard/blogs/${blog.id}/edit`, errors, oldInputs(formData, BLOG_FORM_OLD_INPUT_KEYS));
   }
 
-  if (image) {
-    if (blog.image) {
-      await deleteStoredFile(env, blog.image);
+  const previousImage = blog.image;
+  let uploadedImage: string | null = null;
+
+  try {
+    if (image) {
+      const key = buildBlogStorageKey(image.name);
+      uploadedImage = (await uploadPublicFile(env, key, image)).publicUrl;
+      blog.image = uploadedImage;
     }
-    const key = buildBlogStorageKey(image.name);
-    blog.image = (await uploadPublicFile(env, key, image)).publicUrl;
+
+    blog.title = title;
+    blog.subtitle = subtitle;
+    blog.category = category;
+    blog.tags = tags;
+    blog.imageCaption = imageCaption;
+    blog.content = content;
+    blog.contentBlocks = contentBlocks;
+    blog.status = status!;
+    blog.publishedAt = status === "published" ? (publishedAt ?? blog.publishedAt ?? sqlNow()) : null;
+
+    await updateBlog(env, blog);
+
+    if (uploadedImage && previousImage && previousImage !== uploadedImage) {
+      await deleteStoredFile(env, previousImage).catch(() => undefined);
+    }
+
+    setFlash(session, { success: "Blog updated successfully." });
+    return redirect("/dashboard/blogs");
+  } catch (error) {
+    if (uploadedImage) {
+      await deleteStoredFile(env, uploadedImage).catch(() => undefined);
+    }
+    return setBlogFormFailure(session, `/dashboard/blogs/${blog.id}/edit`, formData, `Gagal menyimpan blog: ${errorMessage(error)}`);
   }
-
-  blog.title = title;
-  blog.subtitle = subtitle;
-  blog.category = category;
-  blog.tags = tags;
-  blog.imageCaption = imageCaption;
-  blog.content = content;
-  blog.contentBlocks = contentBlocks;
-  blog.status = status!;
-  blog.publishedAt = status === "published" ? (publishedAt ?? blog.publishedAt ?? sqlNow()) : null;
-
-  await updateBlog(env, blog);
-  setFlash(session, { success: "Blog updated successfully." });
-  return redirect("/dashboard/blogs");
 }
 
 async function handleBlogDelete(env: Env, session: SessionState, user: User, blogId: number): Promise<Response> {
@@ -728,11 +761,15 @@ async function handleBlogDelete(env: Env, session: SessionState, user: User, blo
     return forbidden();
   }
 
-  if (blog.image) {
-    await deleteStoredFile(env, blog.image);
+  try {
+    if (blog.image) {
+      await deleteStoredFile(env, blog.image);
+    }
+    await deleteBlog(env, blog.id);
+    setFlash(session, { success: "Blog deleted successfully." });
+  } catch (error) {
+    setFlash(session, { error: `Gagal menghapus blog: ${errorMessage(error)}` });
   }
-  await deleteBlog(env, blog.id);
-  setFlash(session, { success: "Blog deleted successfully." });
   return redirect("/dashboard/blogs");
 }
 
@@ -942,26 +979,14 @@ async function routeRequest(request: Request, env: Env, session: SessionState, f
       return notFound();
     }
 
-    const upstream = await fetch(resolveStoredStorageUrl(env, project.filePath));
-    if (upstream.status === 404) {
+    const response = await storedFileResponse(env, project.filePath, {
+      cacheControl: "private, no-store",
+      contentDisposition: `attachment; filename="${project.originalFilename.replaceAll('"', "")}"`,
+    });
+    if (response.status === 404) {
       return notFound();
     }
-    if (!upstream.ok) {
-      throw new Error(`Storage request failed with status ${upstream.status}.`);
-    }
-
-    const headers = new Headers();
-    const contentType = upstream.headers.get("Content-Type");
-    if (contentType) {
-      headers.set("Content-Type", contentType);
-    }
-    const contentLength = upstream.headers.get("Content-Length");
-    if (contentLength) {
-      headers.set("Content-Length", contentLength);
-    }
-    headers.set("Cache-Control", "private, no-store");
-    headers.set("Content-Disposition", `attachment; filename="${project.originalFilename.replaceAll('"', "")}"`);
-    return new Response(upstream.body, { headers, status: upstream.status });
+    return response;
   }
 
   const storageMatch = path.match(/^\/storage\/(.+)$/);

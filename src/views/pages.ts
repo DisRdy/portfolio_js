@@ -305,7 +305,6 @@ export function renderCommentsPage(options: {
 
     <main class="comments-shell">
         <header class="comments-hero">
-            <span>Guestbook</span>
             <h1>Comments & suggestions.</h1>
             <p>Tinggalkan pesan singkat, ide, atau sapaan. Semua komentar akan tampil sebagai bagian dari ruang kecil portfolio ini.</p>
         </header>
@@ -413,7 +412,12 @@ export function renderLoginPage(flash: FlashData, csrfToken: string): string {
                         <label for="password">Access Token</label>
                         <span>Secure</span>
                     </div>
-                    <input type="password" name="password" id="password" required placeholder="Stt....">
+                    <div class="login-password-control">
+                        <input type="password" name="password" id="password" required placeholder="Stt....">
+                        <button type="button" class="login-password-toggle" data-password-toggle aria-controls="password" aria-label="Show password" aria-pressed="false" title="Show password">
+                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                        </button>
+                    </div>
                     ${renderValidationError(errors, "password", "login-error")}
                 </div>
 
@@ -558,7 +562,6 @@ export function renderProjectsPage(projects: Project[], selectedCategory: string
 
     <main class="projects-shell">
         <header class="projects-hero">
-            <span>Portfolio Collection</span>
             <h1>Projects</h1>
             <p>Kumpulan pekerjaan terpilih, dibagi menjadi website dan data analytics agar lebih mudah dipindai.</p>
         </header>
@@ -926,7 +929,6 @@ export function renderBlogIndexPage(blogs: Blog[]): string {
 
     <main class="blog-shell blog-index-shell">
         <header class="blog-index-hero">
-            <span>Writing</span>
             <h1>Blog</h1>
             <p>Catatan tentang sistem, data, proses belajar, dan hal-hal teknis yang sedang saya rapikan.</p>
         </header>

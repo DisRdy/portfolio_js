@@ -30,3 +30,43 @@ interface D1Database {
 interface Fetcher {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }
+
+interface R2HTTPMetadata {
+  cacheControl?: string;
+  contentDisposition?: string;
+  contentEncoding?: string;
+  contentLanguage?: string;
+  contentType?: string;
+}
+
+interface R2PutOptions {
+  httpMetadata?: R2HTTPMetadata;
+  customMetadata?: Record<string, string>;
+}
+
+interface R2Object {
+  key: string;
+  version: string;
+  size: number;
+  etag: string;
+  httpEtag: string;
+  uploaded: Date;
+  httpMetadata?: R2HTTPMetadata;
+  customMetadata?: Record<string, string>;
+}
+
+interface R2ObjectBody extends R2Object {
+  body: ReadableStream;
+  bodyUsed: boolean;
+  arrayBuffer(): Promise<ArrayBuffer>;
+  blob(): Promise<Blob>;
+  json<T = unknown>(): Promise<T>;
+  text(): Promise<string>;
+  writeHttpMetadata(headers: Headers): void;
+}
+
+interface R2Bucket {
+  get(key: string): Promise<R2ObjectBody | null>;
+  put(key: string, value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob, options?: R2PutOptions): Promise<R2Object>;
+  delete(key: string): Promise<void>;
+}

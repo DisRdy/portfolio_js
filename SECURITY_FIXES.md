@@ -12,7 +12,7 @@ Audit/fix date: 2026-04-08
   - added SVG sandbox CSP
 - Added a pre-parse multipart/urlencoded body-size gate in [src/index.ts:141](src/index.ts#L141) and [src/index.ts:155](src/index.ts#L155), returning `413` from [src/index.ts:912](src/index.ts#L912).
 - Restricted storage URL resolution so the Worker no longer follows arbitrary absolute URLs from D1 in [src/lib/storage.ts:85](src/lib/storage.ts#L85).
-- Added optional support for `SUPABASE_SERVICE_ROLE_KEY` in [src/lib/storage.ts:34](src/lib/storage.ts#L34) and typed it in [src/types.ts:12](src/types.ts#L12).
+- Replaced third-party storage credentials with the Worker-native `STORAGE` R2 binding in [src/lib/storage.ts](src/lib/storage.ts).
 - Defaulted debug mode off in [wrangler.toml:9](wrangler.toml#L9), [.env.example:3](.env.example#L3), and [.dev.vars.example:3](.dev.vars.example#L3).
 - Restricted `/git-test` to debug mode in [src/index.ts:883](src/index.ts#L883).
 - Hardened IP extraction to trust `CF-Connecting-IP` only in [src/lib/utils.ts:156](src/lib/utils.ts#L156).
@@ -30,35 +30,20 @@ Audit/fix date: 2026-04-08
 
 ## Manual Actions Required
 
-### 1. Stop relying on `SUPABASE_ANON_KEY` for privileged storage writes
+### 1. Verify R2 bucket binding for privileged storage writes
 
-- Add a Worker secret:
+- Ensure the deployed Worker has the `STORAGE` R2 binding pointed at the `portfolio` bucket.
+- Keep the bucket private and serve objects through Worker routes such as `/storage/...`.
 
-```bash
-npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-```
-
-- Leave `SUPABASE_ANON_KEY` available only if you still need it for non-privileged operations.
-
-### 2. Tighten Supabase Storage policies for bucket `portfolio`
-
-- Keep public read behavior only if the product requires public assets.
-- Remove any `anon` storage policy that grants `INSERT`, `UPDATE`, or `DELETE` on the `portfolio` bucket.
-- If possible, let only `service_role` perform upload/delete operations.
-
-Reference:
-- Supabase API security guide: https://supabase.com/docs/guides/api/securing-your-api
-
-### 3. Verify deployed Worker configuration
+### 2. Verify deployed Worker configuration
 
 - Ensure the deployed Worker is not overriding `APP_DEBUG` back to `true`.
 - Ensure the deployed Worker has:
   - `LOGIN_RATE_LIMIT_MAX`
   - `LOGIN_RATE_LIMIT_WINDOW_SECONDS`
-  - `SUPABASE_URL`
-  - `SUPABASE_SERVICE_ROLE_KEY` preferred, or `SUPABASE_ANON_KEY` only as a fallback
+  - `STORAGE` R2 binding
 
-### 4. Decide whether you want stronger session assurance
+### 3. Decide whether you want stronger session assurance
 
 - If your threat model includes session theft, consider one or more of:
   - shorter session TTL

@@ -13,15 +13,15 @@
 - Public blog pages still list and show only `published` posts.
 - Blog slugs remain fixed after creation, matching the current Laravel controller behavior.
 - Blog images remain publicly reachable under `/storage/<key>`.
-- New project files and blog images are stored as public Supabase Storage URLs while legacy relative keys still resolve through the same compatibility routes.
+- New project files and blog images are stored in Cloudflare R2 and exposed through `/storage/<key>` while legacy relative keys still resolve through the same compatibility routes.
 
 ## Behavior That Could Not Be Preserved 1:1
 
-- `/fix-storage` is now a compatibility no-op returning the same success text, because Cloudflare Workers + Supabase Storage do not use Laravel storage symlinks.
+- `/fix-storage` is now a compatibility no-op returning the same success text, because Cloudflare Workers + R2 do not use Laravel storage symlinks.
 - `/dashboard/blogs/{blog}` currently exists in Laravel because of `Route::resource()`, but the controller has no `show()` method. The Worker keeps the route and returns `404` instead of reproducing Laravel’s framework exception.
 - Laravel’s default exception pages are replaced with Worker-rendered HTML error pages.
 - The runtime no longer depends on PHP sessions, Eloquent, or the local filesystem.
-- The deployable runtime is now the Worker entrypoint plus Cloudflare bindings and Supabase Storage.
+- The deployable runtime is now the Worker entrypoint plus Cloudflare D1, R2, and asset bindings.
 
 ## Source-Truth Quirks Preserved Deliberately
 
@@ -32,20 +32,18 @@
 
 ## Platform Limitations
 
-- Cloudflare Workers cannot write to a local disk, so uploads are moved to Supabase Storage.
+- Cloudflare Workers cannot write to a local disk, so uploads are moved to Cloudflare R2.
 - There is no native Laravel Blade runtime on Workers, so the HTML is rendered from TypeScript string templates.
 - Queue, mail, and Artisan runtime facilities are not migrated as active services because the audited app does not use them for product behavior.
-- Using `SUPABASE_ANON_KEY` for server-side uploads requires Storage policies that allow the Worker to insert and delete files in the `portfolio` bucket.
 
 ## Manual Follow-up Steps
 
 1. Create and bind a D1 database in `wrangler.toml`.
-2. Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` for local development and deployed Workers.
-3. Ensure the Supabase `portfolio` bucket exists and is public.
+2. Create and bind an R2 bucket named `portfolio` in `wrangler.toml`.
+3. Ensure existing uploaded files are present in the R2 `portfolio` bucket.
 4. Apply `migrations/0001_initial.sql` to D1.
 5. Export or migrate existing SQLite data into D1.
-6. Upload existing `storage/app/public/projects/*` and `storage/app/public/blogs/*` files into the Supabase `portfolio` bucket using the same object keys.
-7. Ensure Supabase Storage policies allow the Worker to upload and delete files with the configured key.
+6. Upload existing `storage/app/public/projects/*` and `storage/app/public/blogs/*` files into R2 using the same object keys.
 
 ## Live Database Divergence Captured
 

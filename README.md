@@ -5,7 +5,7 @@ This repository now runs as a Cloudflare Worker with:
 - Cloudflare Workers
 - Cloudflare D1
 - TypeScript
-- Supabase Storage for uploaded project files and blog images
+- Cloudflare R2 for uploaded project files and blog images
 
 ## Scripts
 
@@ -28,8 +28,8 @@ npm run deploy
 ## Setup
 
 - Configure D1 in [wrangler.toml](/c:/laragon/www/portfolio/wrangler.toml)
-- Set `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-- Use a public Supabase Storage bucket named `portfolio`
+- Create a Cloudflare R2 bucket named `portfolio`
+- Keep the `STORAGE` R2 binding in [wrangler.toml](/c:/laragon/www/portfolio/wrangler.toml)
 - Apply the D1 migrations from [migrations/0001_initial.sql](/c:/laragon/www/portfolio/migrations/0001_initial.sql)
 
 See [DEPLOY.md](/c:/laragon/www/portfolio/DEPLOY.md) for the full deployment checklist.

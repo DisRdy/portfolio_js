@@ -1,15 +1,13 @@
 export interface Env {
   DB: D1Database;
   ASSETS?: Fetcher;
+  STORAGE: R2Bucket;
   APP_NAME?: string;
   APP_URL?: string;
   APP_DEBUG?: string;
   LOGIN_RATE_LIMIT_MAX?: string;
   LOGIN_RATE_LIMIT_WINDOW_SECONDS?: string;
   REGISTRATION_ENABLED?: string;
-  SUPABASE_URL?: string;
-  SUPABASE_ANON_KEY?: string;
-  SUPABASE_SERVICE_ROLE_KEY?: string;
   SESSION_COOKIE_NAME?: string;
   SESSION_TTL_MINUTES?: string;
   COMMENTS_RATE_LIMIT_MAX?: string;

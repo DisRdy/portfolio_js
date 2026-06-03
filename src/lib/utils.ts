@@ -243,7 +243,7 @@ function decodeStoragePath(path: string): string {
 
 export function storageUrl(path: string): string {
   const value = path.trim();
-  const supabasePrefix = "/storage/v1/object/public/portfolio/";
+  const legacySupabasePrefix = "/storage/v1/object/public/portfolio/";
 
   if (!value) {
     return "/storage";
@@ -256,12 +256,12 @@ export function storageUrl(path: string): string {
   if (/^https?:\/\//i.test(value)) {
     try {
       const url = new URL(value);
-      const markerIndex = url.pathname.indexOf(supabasePrefix);
+      const markerIndex = url.pathname.indexOf(legacySupabasePrefix);
       if (markerIndex === -1) {
         return value;
       }
 
-      const key = decodeStoragePath(url.pathname.slice(markerIndex + supabasePrefix.length));
+      const key = decodeStoragePath(url.pathname.slice(markerIndex + legacySupabasePrefix.length));
       return `/storage/${encodeStoragePath(key)}`;
     } catch {
       return value;
