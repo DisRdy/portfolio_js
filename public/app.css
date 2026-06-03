@@ -429,6 +429,12 @@ body.portfolio-home {
     font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
+.home-contact-icons .whatsapp-icon {
+    width: 19px;
+    height: 19px;
+    fill: currentColor;
+}
+
 body.portfolio-home > footer {
     width: min(100% - 32px, 800px);
     margin: 0 auto 32px;
@@ -2281,6 +2287,23 @@ body.admin-page {
     resize: vertical;
 }
 
+.blog-image-file-input {
+    min-height: 44px;
+    color: #f8fafc;
+}
+
+.blog-image-file-input::file-selector-button {
+    border: 0;
+    border-radius: 4px;
+    background: #f8fafc;
+    color: #101011;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    margin-right: 12px;
+    padding: 8px 12px;
+}
+
 .form-help-text,
 .form-error {
     display: block;
@@ -2452,6 +2475,34 @@ body.admin-page {
     margin-top: 10px;
 }
 
+.block-editor-item .block-editor-file-input {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 0;
+    color: #f8fafc;
+}
+
+.block-editor-file-input::file-selector-button {
+    border: 0;
+    border-radius: 4px;
+    background: #f8fafc;
+    color: #101011;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    margin-right: 12px;
+    padding: 8px 12px;
+}
+
+.block-editor-current-image {
+    display: block;
+    margin-top: 8px;
+    color: #9ca3af;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
 .block-editor-item button,
 .block-editor-actions button {
     border: 1px solid #34373c;
@@ -2497,15 +2548,22 @@ body.admin-page {
 }
 
 .current-blog-image {
+    width: min(100%, 520px);
     margin: 0 0 20px;
+    border: 1px solid #33363a;
+    border-radius: 12px;
+    background: #151516;
+    padding: 12px;
 }
 
 .current-blog-image img {
-    width: min(100%, 360px);
-    max-height: 190px;
+    width: 100%;
+    height: auto;
+    max-height: 420px;
     display: block;
-    border-radius: 10px;
-    object-fit: cover;
+    border-radius: 9px;
+    background: #101011;
+    object-fit: contain;
 }
 
 .current-blog-image figcaption {
@@ -2829,9 +2887,16 @@ body.blog-page {
     margin: 0 0 56px;
 }
 
+.article-hero-image {
+    width: min(100%, 560px);
+    margin-right: auto;
+    margin-left: auto;
+}
+
 .article-hero-image img,
 .article-inline-image img {
     width: 100%;
+    height: auto;
     display: block;
     border-radius: 8px;
     background: #1f2022;
@@ -2839,8 +2904,8 @@ body.blog-page {
 }
 
 .article-hero-image img {
-    max-height: 420px;
-    object-fit: cover;
+    max-height: none;
+    object-fit: contain;
 }
 
 .article-hero-image figcaption,
@@ -2862,6 +2927,8 @@ body.blog-page {
     color: #c8cdd5;
     font-size: 14px;
     line-height: 1.9;
+    text-align: justify;
+    text-justify: inter-word;
 }
 
 .article-section-title {

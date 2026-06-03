@@ -17,6 +17,7 @@ import {
 import { renderProjectModal, type ProjectPreviewMetric } from "./projectModal";
 
 const SITE_FOOTER_TEXT = "Built by Dr &copy; 2025 &mdash; All rights reserved.";
+const WHATSAPP_URL = "https://wa.me/qr/OY2Y7E536RXBA1";
 
 function publicNavbar(active: "home" | "projects" | "blog" | "comments"): string {
   return `<nav class="kof-navbar">
@@ -209,7 +210,7 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
             <h1>Disna Radita</h1>
             <p>Mahasiswa Informatika di INSTIKI (Institut Bisnis Dan Teknologi Indonesia) dengan fokus pada Data Analyst.</p>
             <div class="home-cta">
-                <a href="#contact">WhatsApp</a>
+                <a href="${escapeAttribute(WHATSAPP_URL)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
                 <a href="#contact">Contact</a>
                 <a href="/projects">Download CV</a>
             </div>
@@ -281,7 +282,11 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
                 <div class="home-contact-icons" aria-label="Contact links">
                     <a href="mailto:disnaraditya@gmail.com" aria-label="Email Disna Radita"><span class="material-symbols-outlined">mail</span></a>
                     <a href="https://github.com/DisRdy" target="_blank" rel="noopener noreferrer" aria-label="GitHub Disna Radita"><span class="material-symbols-outlined">code</span></a>
-                    <a href="https://dev.to/lamp" target="_blank" rel="noopener noreferrer" aria-label="Dev Community Disna Radita"><span class="material-symbols-outlined">laptop_mac</span></a>
+                    <a href="${escapeAttribute(WHATSAPP_URL)}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Disna Radita">
+                        <svg class="whatsapp-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                            <path d="M16.01 3.2c-7.02 0-12.73 5.65-12.73 12.6 0 2.23.6 4.41 1.73 6.32L3.2 28.8l6.86-1.78a12.86 12.86 0 0 0 5.95 1.5c7.02 0 12.73-5.65 12.73-12.61S23.03 3.2 16.01 3.2Zm0 23.2c-1.86 0-3.68-.49-5.28-1.42l-.38-.22-4.07 1.06 1.09-3.93-.25-.4a10.36 10.36 0 0 1-1.63-5.58c0-5.78 4.72-10.48 10.52-10.48 5.81 0 10.53 4.7 10.53 10.48 0 5.79-4.72 10.49-10.53 10.49Zm5.77-7.85c-.31-.16-1.86-.91-2.15-1.02-.29-.11-.5-.16-.71.16-.21.31-.82 1.01-1.01 1.22-.18.21-.37.24-.68.08-.31-.16-1.32-.48-2.51-1.54-.93-.82-1.56-1.84-1.74-2.15-.18-.31-.02-.48.14-.64.14-.14.31-.37.47-.55.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.71-1.69-.97-2.31-.26-.61-.52-.52-.71-.53h-.61c-.21 0-.55.08-.84.39-.29.31-1.1 1.07-1.1 2.61 0 1.54 1.13 3.03 1.29 3.24.16.21 2.22 3.36 5.38 4.72.75.32 1.34.51 1.8.65.76.24 1.45.21 2 .13.61-.09 1.86-.76 2.12-1.49.26-.73.26-1.36.18-1.49-.08-.13-.29-.21-.6-.37Z"/>
+                        </svg>
+                    </a>
                     <a href="https://www.instagram.com/dsnardy?igsh=bDNubXduNmNsYTM1" target="_blank" rel="noopener noreferrer" aria-label="Instagram Disna Radita"><span class="material-symbols-outlined">photo_camera</span></a>
                 </div>
             </div>
@@ -1165,7 +1170,7 @@ export function renderDashboardBlogFormPage(options: {
 
                     <div>
                         <label for="blog-image" class="form-group-label">Cover Image ${isEdit ? "(Optional)" : "(Optional)"}</label>
-                        <input type="file" name="image" id="blog-image" class="form-input" accept="image/*">
+                        <input type="file" name="image" id="blog-image" class="form-input blog-image-file-input" accept="image/*">
                         ${isEdit ? `<small class="form-help-text">Leave blank to keep current image</small>` : ""}
                         ${renderValidationError(errors, "image")}
                     </div>

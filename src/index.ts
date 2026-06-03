@@ -379,6 +379,84 @@ function validateFile(file: File | null, field: string, errors: Record<string, s
   return file;
 }
 
+interface BlogContentBlockUploadResult {
+  value: string;
+  uploadedPaths: string[];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+async function deleteStoredFilesQuietly(env: Env, storedValues: string[]): Promise<void> {
+  for (const storedValue of storedValues) {
+    try {
+      await deleteStoredFile(env, storedValue);
+    } catch {
+      // Best-effort cleanup for files uploaded during a failed form submission.
+    }
+  }
+}
+
+async function resolveBlogContentBlockUploads(
+  env: Env,
+  formData: FormData | null,
+  value: string,
+  errors: Record<string, string>,
+): Promise<BlogContentBlockUploadResult> {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(value || "[]");
+  } catch {
+    return { value, uploadedPaths: [] };
+  }
+
+  if (!Array.isArray(parsed)) {
+    return { value, uploadedPaths: [] };
+  }
+
+  const uploadedPaths: string[] = [];
+  const nextBlocks: unknown[] = [...parsed];
+
+  try {
+    for (let index = 0; index < parsed.length; index += 1) {
+      const block = parsed[index];
+      if (!isRecord(block) || block.type !== "image") {
+        continue;
+      }
+
+      const field = `content_image_${index}`;
+      const image = validateFile(formFile(formData, field), field, errors, { required: false, maxKb: 2048, image: true });
+
+      if (errors[field]) {
+        errors.content_blocks = errors.content_blocks ?? errors[field];
+        continue;
+      }
+
+      if (!image) {
+        continue;
+      }
+
+      const key = buildBlogStorageKey(image.name);
+      const uploaded = await uploadPublicFile(env, key, image);
+      uploadedPaths.push(uploaded.publicUrl);
+      nextBlocks[index] = {
+        ...block,
+        value: uploaded.publicUrl,
+      };
+    }
+  } catch (error) {
+    await deleteStoredFilesQuietly(env, uploadedPaths);
+    throw error;
+  }
+
+  return {
+    value: JSON.stringify(nextBlocks),
+    uploadedPaths,
+  };
+}
+
 function pageExpired(): Response {
   return html(renderErrorPage("Page Expired", "The page has expired. Please refresh and try again.", 419), 419);
 }
@@ -753,22 +831,33 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
   const tags = parseTagsInput(formString(formData, "tags"));
   const image = validateFile(formFile(formData, "image"), "image", errors, { required: false, maxKb: 2048, image: true });
   const imageCaption = validateOptionalText(formString(formData, "image_caption"), "image_caption", errors, { max: 255 });
-  const contentBlocks = validateBlogContentBlocks(formString(formData, "content_blocks"), errors);
-  const content = plainTextFromBlocks(contentBlocks);
+  let contentBlocksValue = formString(formData, "content_blocks");
   const status = validateChoice(formString(formData, "status"), "status", BLOG_STATUSES, errors);
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
-  if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, "/dashboard/blogs/create", errors, oldInputs(formData, BLOG_FORM_OLD_INPUT_KEYS));
-  }
-
-  let slug = slugify(title);
-  if (await blogSlugExists(env, slug)) {
-    slug = `${slug}-${Math.floor(Date.now() / 1000)}`;
-  }
-
+  let uploadedContentImages: string[] = [];
   let imagePath: string | null = null;
+
   try {
+    if (Object.keys(errors).length === 0) {
+      const contentBlockUploads = await resolveBlogContentBlockUploads(env, formData, contentBlocksValue, errors);
+      contentBlocksValue = contentBlockUploads.value;
+      uploadedContentImages = contentBlockUploads.uploadedPaths;
+    }
+
+    const contentBlocks = validateBlogContentBlocks(contentBlocksValue, errors);
+    const content = plainTextFromBlocks(contentBlocks);
+
+    if (Object.keys(errors).length > 0) {
+      await deleteStoredFilesQuietly(env, uploadedContentImages);
+      return setValidationFlash(session, "/dashboard/blogs/create", errors, oldInputs(formData, BLOG_FORM_OLD_INPUT_KEYS));
+    }
+
+    let slug = slugify(title);
+    if (await blogSlugExists(env, slug)) {
+      slug = `${slug}-${Math.floor(Date.now() / 1000)}`;
+    }
+
     if (image) {
       const key = buildBlogStorageKey(image.name);
       imagePath = (await uploadPublicFile(env, key, image)).publicUrl;
@@ -792,6 +881,7 @@ async function handleBlogCreate(env: Env, formData: FormData | null, session: Se
     setFlash(session, { success: "Blog created successfully." });
     return redirect("/dashboard/blogs");
   } catch (error) {
+    await deleteStoredFilesQuietly(env, uploadedContentImages);
     if (imagePath) {
       await deleteStoredFile(env, imagePath).catch(() => undefined);
     }
@@ -816,19 +906,29 @@ async function handleBlogUpdate(env: Env, formData: FormData | null, session: Se
   const tags = parseTagsInput(formString(formData, "tags"));
   const image = validateFile(formFile(formData, "image"), "image", errors, { required: false, maxKb: 2048, image: true });
   const imageCaption = validateOptionalText(formString(formData, "image_caption"), "image_caption", errors, { max: 255 });
-  const contentBlocks = validateBlogContentBlocks(formString(formData, "content_blocks"), errors);
-  const content = plainTextFromBlocks(contentBlocks);
+  let contentBlocksValue = formString(formData, "content_blocks");
   const status = validateChoice(formString(formData, "status"), "status", BLOG_STATUSES, errors);
   const publishedAt = validateDateTime(formString(formData, "published_at"), "published_at", errors);
 
-  if (Object.keys(errors).length > 0) {
-    return setValidationFlash(session, `/dashboard/blogs/${blog.id}/edit`, errors, oldInputs(formData, BLOG_FORM_OLD_INPUT_KEYS));
-  }
-
   const previousImage = blog.image;
+  let uploadedContentImages: string[] = [];
   let uploadedImage: string | null = null;
 
   try {
+    if (Object.keys(errors).length === 0) {
+      const contentBlockUploads = await resolveBlogContentBlockUploads(env, formData, contentBlocksValue, errors);
+      contentBlocksValue = contentBlockUploads.value;
+      uploadedContentImages = contentBlockUploads.uploadedPaths;
+    }
+
+    const contentBlocks = validateBlogContentBlocks(contentBlocksValue, errors);
+    const content = plainTextFromBlocks(contentBlocks);
+
+    if (Object.keys(errors).length > 0) {
+      await deleteStoredFilesQuietly(env, uploadedContentImages);
+      return setValidationFlash(session, `/dashboard/blogs/${blog.id}/edit`, errors, oldInputs(formData, BLOG_FORM_OLD_INPUT_KEYS));
+    }
+
     if (image) {
       const key = buildBlogStorageKey(image.name);
       uploadedImage = (await uploadPublicFile(env, key, image)).publicUrl;
@@ -854,6 +954,7 @@ async function handleBlogUpdate(env: Env, formData: FormData | null, session: Se
     setFlash(session, { success: "Blog updated successfully." });
     return redirect("/dashboard/blogs");
   } catch (error) {
+    await deleteStoredFilesQuietly(env, uploadedContentImages);
     if (uploadedImage) {
       await deleteStoredFile(env, uploadedImage).catch(() => undefined);
     }

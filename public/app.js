@@ -314,8 +314,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let blocks = parseBlocks(target.value);
 
+        const serializeBlocks = function () {
+            return blocks.map(function (block) {
+                const serialized = {
+                    type: block.type,
+                    value: block.value || '',
+                };
+
+                if (block.caption) {
+                    serialized.caption = block.caption;
+                }
+
+                if (block.language) {
+                    serialized.language = block.language;
+                }
+
+                return serialized;
+            });
+        };
+
         const sync = function () {
-            target.value = JSON.stringify(blocks);
+            target.value = JSON.stringify(serializeBlocks());
         };
 
         const render = function () {
@@ -337,7 +356,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     select.appendChild(option);
                 });
                 select.addEventListener('change', function () {
+                    const previousType = blocks[index].type;
                     blocks[index].type = select.value;
+                    if (previousType !== 'image' && select.value === 'image') {
+                        blocks[index].value = '';
+                        blocks[index].language = '';
+                    }
+                    if (previousType === 'image' && select.value !== 'image') {
+                        delete blocks[index].pendingFile;
+                        blocks[index].value = '';
+                        blocks[index].caption = '';
+                    }
+                    if (previousType === 'code' && select.value !== 'code') {
+                        blocks[index].language = '';
+                    }
                     render();
                     sync();
                 });
@@ -354,16 +386,52 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 header.append(select, remove);
 
-                const textarea = document.createElement('textarea');
-                textarea.value = block.value || '';
-                textarea.placeholder = blockPlaceholder(block.type);
-                textarea.rows = block.type === 'code' ? 7 : 4;
-                textarea.addEventListener('input', function () {
-                    blocks[index].value = textarea.value;
-                    sync();
-                });
+                row.appendChild(header);
 
-                row.append(header, textarea);
+                if (block.type === 'image') {
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.name = `content_image_${index}`;
+                    fileInput.accept = 'image/*';
+                    fileInput.className = 'block-editor-file-input';
+
+                    if (block.pendingFile && window.DataTransfer) {
+                        const transfer = new DataTransfer();
+                        transfer.items.add(block.pendingFile);
+                        fileInput.files = transfer.files;
+                    }
+
+                    fileInput.addEventListener('change', function () {
+                        const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+                        if (selectedFile) {
+                            blocks[index].pendingFile = selectedFile;
+                            blocks[index].value = blocks[index].value || '';
+                        } else {
+                            delete blocks[index].pendingFile;
+                        }
+                        sync();
+                    });
+
+                    row.appendChild(fileInput);
+
+                    if (block.value) {
+                        const currentImage = document.createElement('small');
+                        currentImage.className = 'block-editor-current-image';
+                        currentImage.textContent = `Current image: ${block.value}`;
+                        row.appendChild(currentImage);
+                    }
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = block.value || '';
+                    textarea.placeholder = blockPlaceholder(block.type);
+                    textarea.rows = block.type === 'code' ? 7 : 4;
+                    textarea.addEventListener('input', function () {
+                        blocks[index].value = textarea.value;
+                        sync();
+                    });
+
+                    row.appendChild(textarea);
+                }
 
                 if (block.type === 'code' || block.type === 'image') {
                     const meta = document.createElement('input');
