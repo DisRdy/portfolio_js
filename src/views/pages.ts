@@ -69,8 +69,8 @@ function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: 
 
   return `<aside class="admin-sidebar">
     <div class="admin-brand">
-        <a href="/dashboard">Admin</a>
-        <span>Precision Control</span>
+        <a href="/dashboard">Welcome</a>
+        <span>Precision Control Dashboard</span>
     </div>
 
     <nav class="admin-nav" aria-label="Dashboard navigation">
@@ -87,13 +87,6 @@ function dashboardNavbar(active: "dashboard" | "projects" | "blogs", csrfToken: 
             <span>Writing</span>
         </a>
     </nav>
-
-    <div class="admin-user-card">
-        <div>
-            <p>Disna Radita</p>
-            <span>Administrator</span>
-        </div>
-    </div>
 
     <form method="POST" action="/logout" class="admin-logout-form">
         <input type="hidden" name="_token" value="${escapeAttribute(csrfToken)}">
@@ -292,7 +285,11 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
                 <p class="home-body-text">Tertarik berkolaborasi atau sekadar ingin menyapa? Jangan ragu untuk menghubungi saya.</p>
                 <div class="home-contact-icons" aria-label="Contact links">
                     <a href="mailto:disnaraditya@gmail.com" aria-label="Email Disna Radita"><span class="material-symbols-outlined">mail</span></a>
-                    <a href="https://github.com/DisRdy" target="_blank" rel="noopener noreferrer" aria-label="GitHub Disna Radita"><span class="material-symbols-outlined">code</span></a>
+                    <a href="https://github.com/DisRdy" target="_blank" rel="noopener noreferrer" aria-label="GitHub Disna Radita">
+                        <svg class="github-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 .3C5.37.3 0 5.67 0 12.3c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.82 1.31 3.51 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12.02 12.02 0 0 0 24 12.3C24 5.67 18.63.3 12 .3Z"/>
+                        </svg>
+                    </a>
                     <a href="${escapeAttribute(WHATSAPP_URL)}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Disna Radita">
                         <svg class="whatsapp-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
                             <path d="M16.01 3.2c-7.02 0-12.73 5.65-12.73 12.6 0 2.23.6 4.41 1.73 6.32L3.2 28.8l6.86-1.78a12.86 12.86 0 0 0 5.95 1.5c7.02 0 12.73-5.65 12.73-12.61S23.03 3.2 16.01 3.2Zm0 23.2c-1.86 0-3.68-.49-5.28-1.42l-.38-.22-4.07 1.06 1.09-3.93-.25-.4a10.36 10.36 0 0 1-1.63-5.58c0-5.78 4.72-10.48 10.52-10.48 5.81 0 10.53 4.7 10.53 10.48 0 5.79-4.72 10.49-10.53 10.49Zm5.77-7.85c-.31-.16-1.86-.91-2.15-1.02-.29-.11-.5-.16-.71.16-.21.31-.82 1.01-1.01 1.22-.18.21-.37.24-.68.08-.31-.16-1.32-.48-2.51-1.54-.93-.82-1.56-1.84-1.74-2.15-.18-.31-.02-.48.14-.64.14-.14.31-.37.47-.55.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.71-1.69-.97-2.31-.26-.61-.52-.52-.71-.53h-.61c-.21 0-.55.08-.84.39-.29.31-1.1 1.07-1.1 2.61 0 1.54 1.13 3.03 1.29 3.24.16.21 2.22 3.36 5.38 4.72.75.32 1.34.51 1.8.65.76.24 1.45.21 2 .13.61-.09 1.86-.76 2.12-1.49.26-.73.26-1.36.18-1.49-.08-.13-.29-.21-.6-.37Z"/>

@@ -435,6 +435,12 @@ body.portfolio-home {
     fill: currentColor;
 }
 
+.home-contact-icons .github-icon {
+    width: 19px;
+    height: 19px;
+    fill: currentColor;
+}
+
 body.portfolio-home > footer {
     width: min(100% - 32px, 800px);
     margin: 0 auto 32px;
