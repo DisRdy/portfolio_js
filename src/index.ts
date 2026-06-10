@@ -85,6 +85,7 @@ import {
   renderErrorPage,
   renderHomePage,
   renderLoginPage,
+  renderNotFoundPage,
   renderProjectsPage,
   renderProjectViewerPage,
   renderRegisterPage,
@@ -157,12 +158,12 @@ function applySecurityHeaders(request: Request, response: Response): Response {
   newResponse.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   newResponse.headers.set("Cross-Origin-Resource-Policy", "same-origin");
 
-  if (contentType.includes("text/html")) {
+  if (contentType.includes("text/html") && !newResponse.headers.has("Content-Security-Policy")) {
     newResponse.headers.set(
       "Content-Security-Policy",
       "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';",
     );
-  } else if (contentType.includes("image/svg+xml")) {
+  } else if (contentType.includes("image/svg+xml") && !newResponse.headers.has("Content-Security-Policy")) {
     newResponse.headers.set("Content-Security-Policy", "sandbox; default-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none';");
   }
 
@@ -462,7 +463,9 @@ function pageExpired(): Response {
 }
 
 function notFound(): Response {
-  return html(renderErrorPage("Not Found", "The requested page could not be found.", 404), 404);
+  return html(renderNotFoundPage(), 404, {
+    "Content-Security-Policy": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';",
+  });
 }
 
 function forbidden(): Response {

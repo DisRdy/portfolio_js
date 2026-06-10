@@ -285,7 +285,7 @@ export function htmlDocument(title: string, body: string, bodyClass = ""): strin
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
-    <link rel="icon" href="/img/LOGODR.png" type="image/png">
+    <link rel="icon" href="/img/Dr2.png" type="image/svg+xml">
 ${stylesheetLink}
 </head>
 <body${bodyClassAttribute}>

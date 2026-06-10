@@ -223,7 +223,7 @@ export function renderHomePage(projects: Project[], blogs: Blog[]): string {
             <div class="home-cta">
                 <a href="${escapeAttribute(WHATSAPP_URL)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
                 <a href="#contact">Contact</a>
-                <a href="/projects">Download CV</a>
+                <a href="/">Download CV</a>
             </div>
         </section>
 
@@ -1241,6 +1241,421 @@ export function renderDashboardBlogFormPage(options: {
     ${footer()}`,
     "admin-page",
   );
+}
+
+export function renderNotFoundPage(): string {
+  return `<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>404 - Page Not Found</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Press+Start+2P&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdea4",
+                        "on-background": "#dce3f1",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "on-secondary-container": "#b8b4b4",
+                        "on-primary": "#00315d",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#412d00",
+                        "surface-bright": "#333a45",
+                        "surface": "#0d141d",
+                        "on-tertiary-fixed": "#261900",
+                        "secondary-fixed": "#e6e1e1",
+                        "surface-container-highest": "#2e3540",
+                        "surface-tint": "#a4c9ff",
+                        "surface-container": "#19202a",
+                        "on-secondary": "#313030",
+                        "surface-dim": "#0d141d",
+                        "on-primary-container": "#003a6b",
+                        "surface-variant": "#2e3540",
+                        "surface-container-low": "#151c26",
+                        "primary-container": "#60a5fa",
+                        "inverse-primary": "#0060ac",
+                        "on-primary-fixed": "#001c39",
+                        "outline-variant": "#414751",
+                        "primary": "#a4c9ff",
+                        "on-tertiary-fixed-variant": "#5d4200",
+                        "on-primary-fixed-variant": "#004883",
+                        "surface-container-high": "#232a35",
+                        "secondary-fixed-dim": "#c9c6c5",
+                        "surface-container-lowest": "#070f18",
+                        "tertiary": "#fabd34",
+                        "secondary": "#c9c6c5",
+                        "inverse-on-surface": "#2a313b",
+                        "primary-fixed": "#d4e3ff",
+                        "secondary-container": "#484646",
+                        "inverse-surface": "#dce3f1",
+                        "on-secondary-fixed-variant": "#484646",
+                        "background": "#0d141d",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "outline": "#8b919d",
+                        "on-surface-variant": "#c1c7d3",
+                        "on-error": "#690005",
+                        "tertiary-container": "#d19900",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "tertiary-fixed-dim": "#fabd34",
+                        "on-tertiary-container": "#4b3500",
+                        "on-surface": "#dce3f1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "gutter": "24px",
+                        "container-max": "1100px",
+                        "stack-lg": "48px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-xl-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "arcade": ["Press Start 2P"]
+                    },
+                    "fontSize": {
+                        "caption": ["14px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-xl": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-mono": ["13px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-xl-mobile": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #131313;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .pong-court {
+            width: calc(100vw - 24px);
+            height: calc(100vh - 24px);
+            margin: 12px;
+            border: 2px solid #60a5fa;
+            border-radius: 12px;
+            box-shadow: 0 0 32px rgba(96, 165, 250, 0.3);
+            position: relative;
+            background-color: #0a0a0a;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .center-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 50%, transparent 50%);
+            background-size: 100% 20px;
+            z-index: 1;
+        }
+
+        .paddle {
+            width: 12px;
+            height: 80px;
+            background-color: #ffffff;
+            position: absolute;
+            z-index: 2;
+            transition: top 0.1s linear, background-color 0.1s;
+        }
+        
+        .paddle.hit {
+            background-color: rgba(96, 165, 250, 0.8);
+            box-shadow: 0 0 16px rgba(96, 165, 250, 0.6);
+        }
+
+        #paddle-left {
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #paddle-right {
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #ball {
+            width: 16px;
+            height: 16px;
+            background-color: #60a5fa;
+            position: absolute;
+            z-index: 3;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 12px rgba(96, 165, 250, 0.5);
+        }
+
+        .content-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @keyframes glitch {
+          0%   { transform: translate(0); clip-path: none; }
+          2%   { transform: translate(-3px, 1px); clip-path: inset(20% 0 60% 0); color: #60a5fa; }
+          4%   { transform: translate(3px, -1px); clip-path: inset(50% 0 20% 0); color: #ffffff; }
+          6%   { transform: translate(-2px, 2px); clip-path: inset(80% 0 5% 0); color: #60a5fa; }
+          8%   { transform: translate(0); clip-path: none; color: #ffffff; }
+          100% { transform: translate(0); clip-path: none; }
+        }
+
+        @keyframes glitch-2 {
+          0%   { transform: translate(0); opacity: 1; }
+          3%   { transform: translate(4px, 0); opacity: 0.8; color: rgba(96,165,250,0.7); }
+          5%   { transform: translate(-4px, 0); opacity: 1; color: #ffffff; }
+          7%   { transform: translate(0); }
+          100% { transform: translate(0); }
+        }
+
+        .error-code {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(40px, 8vw, 80px);
+            color: #ffffff;
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.8);
+            margin-bottom: 24px;
+            letter-spacing: 4px;
+            animation: glitch 4s infinite, glitch-2 4s infinite 0.5s;
+            position: relative;
+        }
+
+        .error-message {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(10px, 2vw, 14px);
+            color: #c6c6c6;
+            text-align: center;
+            line-height: 1.8;
+            margin-bottom: 48px;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+            padding: 0 24px;
+        }
+
+        .btn-home {
+            pointer-events: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 32px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #1c1b1b;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-home:hover {
+            background-color: rgba(96, 165, 250, 0.12);
+            border-color: #60a5fa;
+            color: #ffffff;
+            box-shadow: 0 0 24px rgba(96, 165, 250, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .footer-overlay {
+            position: absolute;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="text-on-background bg-[#131313]">
+<main class="game-container">
+<div class="pong-court" id="court">
+<div class="center-line"></div>
+<div class="paddle" id="paddle-left"></div>
+<div class="paddle" id="paddle-right"></div>
+<div id="ball"></div>
+<div class="content-overlay">
+<h1 class="error-code">404</h1>
+<p class="error-message">Oops! Looks Like<br/>You Are Lost</p>
+<a class="btn-home" href="/">Return Home</a>
+</div>
+<div class="footer-overlay">
+<p class="font-label-mono text-[12px] text-[#8f96a3] tracking-widest text-center opacity-70">
+                Built by Dr &copy; 2025 &mdash; All rights reserved.
+            </p>
+</div>
+</div>
+</main>
+<script>
+        const ball = document.getElementById('ball');
+        const paddleLeft = document.getElementById('paddle-left');
+        const paddleRight = document.getElementById('paddle-right');
+        const court = document.getElementById('court');
+
+        // Game state
+        let courtRect = court.getBoundingClientRect();
+        let ballState = {
+            x: courtRect.width / 2 - 8,
+            y: courtRect.height / 2 - 8,
+            vx: 4,
+            vy: 3,
+            size: 16
+        };
+        
+        let paddleState = {
+            leftY: courtRect.height / 2 - 40,
+            rightY: courtRect.height / 2 - 40,
+            width: 12,
+            height: 80,
+            speed: 3.5,
+            padding: 24
+        };
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            courtRect = court.getBoundingClientRect();
+            ballState.x = courtRect.width / 2 - 8;
+            ballState.y = courtRect.height / 2 - 8;
+        });
+
+        function flashPaddle(paddleEl) {
+            paddleEl.classList.add('hit');
+            setTimeout(() => {
+                paddleEl.classList.remove('hit');
+            }, 150);
+        }
+
+        function updateGame() {
+            // Move ball
+            ballState.x += ballState.vx;
+            ballState.y += ballState.vy;
+
+            // Wall collisions (top/bottom)
+            if (ballState.y <= 0) {
+                ballState.y = 0;
+                ballState.vy *= -1;
+            } else if (ballState.y >= courtRect.height - ballState.size) {
+                ballState.y = courtRect.height - ballState.size;
+                ballState.vy *= -1;
+            }
+
+            // Paddle collisions
+            // Left paddle
+            if (ballState.x <= paddleState.padding + paddleState.width && 
+                ballState.x + ballState.size >= paddleState.padding &&
+                ballState.y + ballState.size >= paddleState.leftY && 
+                ballState.y <= paddleState.leftY + paddleState.height) {
+                
+                ballState.x = paddleState.padding + paddleState.width;
+                ballState.vx *= -1.05; // slight speed increase
+                flashPaddle(paddleLeft);
+            }
+            
+            // Right paddle
+            if (ballState.x + ballState.size >= courtRect.width - paddleState.padding - paddleState.width && 
+                ballState.x <= courtRect.width - paddleState.padding &&
+                ballState.y + ballState.size >= paddleState.rightY && 
+                ballState.y <= paddleState.rightY + paddleState.height) {
+                
+                ballState.x = courtRect.width - paddleState.padding - paddleState.width - ballState.size;
+                ballState.vx *= -1.05;
+                flashPaddle(paddleRight);
+            }
+
+            // AI Paddles (smooth tracking)
+            // Left paddle follows ball if moving left
+            if (ballState.vx < 0) {
+                let targetY = ballState.y - paddleState.height / 2 + ballState.size / 2;
+                if (paddleState.leftY < targetY) paddleState.leftY += paddleState.speed;
+                if (paddleState.leftY > targetY) paddleState.leftY -= paddleState.speed;
+            }
+            
+            // Right paddle follows ball if moving right
+            if (ballState.vx > 0) {
+                let targetY = ballState.y - paddleState.height / 2 + ballState.size / 2;
+                if (paddleState.rightY < targetY) paddleState.rightY += paddleState.speed;
+                if (paddleState.rightY > targetY) paddleState.rightY -= paddleState.speed;
+            }
+
+            // Constrain paddles
+            paddleState.leftY = Math.max(0, Math.min(courtRect.height - paddleState.height, paddleState.leftY));
+            paddleState.rightY = Math.max(0, Math.min(courtRect.height - paddleState.height, paddleState.rightY));
+
+            // Reset if out of bounds (scoring)
+            if (ballState.x < -50 || ballState.x > courtRect.width + 50) {
+                ballState.x = courtRect.width / 2 - 8;
+                ballState.y = courtRect.height / 2 - 8;
+                ballState.vx = (Math.random() > 0.5 ? 4 : -4);
+                ballState.vy = (Math.random() * 6) - 3;
+            }
+
+            // Apply positions
+            ball.style.left = \`\${ballState.x}px\`;
+            ball.style.top = \`\${ballState.y}px\`;
+            paddleLeft.style.top = \`\${paddleState.leftY}px\`;
+            paddleRight.style.top = \`\${paddleState.rightY}px\`;
+
+            requestAnimationFrame(updateGame);
+        }
+
+        // Start game loop
+        requestAnimationFrame(updateGame);
+    </script>
+</body></html>`;
 }
 
 export function renderErrorPage(title: string, message: string, status: number): string {
