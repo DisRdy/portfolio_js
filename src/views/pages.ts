@@ -1501,10 +1501,7 @@ export function renderNotFoundPage(): string {
 
         .btn-home:hover {
             background-color: rgba(96, 165, 250, 0.12);
-            border-color: #60a5fa;
             color: #ffffff;
-            box-shadow: 0 0 24px rgba(96, 165, 250, 0.2);
-            transform: translateY(-2px);
         }
         
         .footer-overlay {
